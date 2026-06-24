@@ -1,0 +1,281 @@
+import { useState } from "react";
+import { toast } from "react-toastify";
+import {
+FaUser,
+FaEnvelope,
+FaLock,
+FaUserPlus,
+FaSpinner,
+FaArrowLeft,
+FaSignInAlt
+} from "react-icons/fa";
+import API from "../services/api";
+
+function Signup({ setPage }) {
+const [name, setName] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] =
+useState("");
+const [confirmPassword,
+setConfirmPassword] = useState("");
+
+const [loading, setLoading] =
+useState(false);
+
+const [errors, setErrors] =
+useState({});
+
+const validateForm = () => {
+
+const newErrors = {};
+
+const emailRegex =
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+if (!name.trim()) {
+  newErrors.name =
+    "Full name is required";
+}
+
+if (!email) {
+  newErrors.email =
+    "Email is required";
+} else if (
+  !emailRegex.test(email)
+) {
+  newErrors.email =
+    "Please enter a valid email address";
+}
+
+if (!password) {
+  newErrors.password =
+    "Password is required";
+} else if (
+  password.length < 6
+) {
+  newErrors.password =
+    "Password must be at least 6 characters";
+}
+
+if (!confirmPassword) {
+  newErrors.confirmPassword =
+    "Confirm password is required";
+} else if (
+  password !== confirmPassword
+) {
+  newErrors.confirmPassword =
+    "Passwords do not match";
+}
+
+setErrors(newErrors);
+
+return (
+  Object.keys(newErrors).length === 0
+);
+
+};
+
+const handleSignup = async (e) => {
+
+e.preventDefault();
+
+if (!validateForm()) return;
+
+setLoading(true);
+
+try {
+
+  await API.post(
+    "/signup",
+    {
+      name,
+      email,
+      password,
+    }
+  );
+
+  toast.success(
+    "Registration successful! Welcome email sent 🎉"
+  );
+
+  setName("");
+  setEmail("");
+  setPassword("");
+  setConfirmPassword("");
+
+  setTimeout(() => {
+    setPage("login");
+  }, 1000);
+
+} catch (err) {
+
+  const errorMsg =
+    err.response?.data?.detail ||
+    "Registration failed. Try again.";
+
+  toast.error(errorMsg);
+
+} finally {
+
+  setLoading(false);
+
+}
+
+};
+
+return (
+<div className="relative min-h-[calc(100vh-73px)] flex justify-center items-center bg-slate-950 text-white px-4 py-12">
+
+  <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 md:w-[450px] h-80 md:h-[450px] rounded-full bg-purple-600/10 blur-[100px] animate-pulse" />
+    <div className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full bg-cyan-500/5 blur-[80px]" />
+  </div>
+
+  <div className="relative z-10 w-full max-w-md bg-slate-900/60 backdrop-blur-xl p-8 md:p-10 rounded-3xl shadow-2xl border border-slate-800/80">
+
+    <button
+      onClick={() =>
+        setPage("landing")
+      }
+      className="flex items-center gap-2 text-slate-400 hover:text-white transition duration-300 text-sm font-medium mb-6"
+    >
+      <FaArrowLeft size={12} />
+      Back to Home
+    </button>
+
+    <div className="text-center mb-8">
+
+      <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+        Create{" "}
+        <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
+          Account
+        </span>
+      </h1>
+
+      <p className="text-slate-400 text-sm mt-2">
+        Sign up to get customized recommendations for your career.
+      </p>
+
+    </div>
+
+    <form
+      onSubmit={handleSignup}
+      className="space-y-4"
+    >
+
+      <input
+        type="text"
+        placeholder="Full Name"
+        value={name}
+        disabled={loading}
+        onChange={(e) =>
+          setName(
+            e.target.value
+          )
+        }
+        className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
+      />
+
+      {errors.name && (
+        <p className="text-red-400 text-xs">
+          {errors.name}
+        </p>
+      )}
+
+      <input
+        type="email"
+        placeholder="Email Address"
+        value={email}
+        disabled={loading}
+        onChange={(e) =>
+          setEmail(
+            e.target.value
+          )
+        }
+        className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
+      />
+
+      {errors.email && (
+        <p className="text-red-400 text-xs">
+          {errors.email}
+        </p>
+      )}
+
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        disabled={loading}
+        onChange={(e) =>
+          setPassword(
+            e.target.value
+          )
+        }
+        className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
+      />
+
+      {errors.password && (
+        <p className="text-red-400 text-xs">
+          {errors.password}
+        </p>
+      )}
+
+      <input
+        type="password"
+        placeholder="Confirm Password"
+        value={confirmPassword}
+        disabled={loading}
+        onChange={(e) =>
+          setConfirmPassword(
+            e.target.value
+          )
+        }
+        className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
+      />
+
+      {errors.confirmPassword && (
+        <p className="text-red-400 text-xs">
+          {errors.confirmPassword}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white py-3.5 rounded-xl font-bold transition duration-300"
+      >
+        {loading ? (
+          <>
+            <FaSpinner className="animate-spin" />
+            Registering...
+          </>
+        ) : (
+          <>
+            <FaUserPlus />
+            Sign Up
+          </>
+        )}
+      </button>
+
+    </form>
+
+    <div className="mt-8 pt-6 border-t border-slate-800 text-center text-sm text-slate-400">
+      Already have an account?{" "}
+      <button
+        onClick={() =>
+          setPage("login")
+        }
+        className="text-purple-400 hover:text-purple-300 font-bold inline-flex items-center gap-1"
+      >
+        <FaSignInAlt size={13} />
+        Sign In Here
+      </button>
+    </div>
+
+  </div>
+</div>
+
+);
+}
+
+export default Signup;

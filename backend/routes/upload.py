@@ -7,13 +7,17 @@ from resume.insights import extract_resume_insights
 from rag.pdf_loader import split_text
 from rag.embeddings import create_embeddings
 from rag.vector_store import vector_store
+
 from services.gemini_service import model
+from db import db
 
 import os
 import json
 
 router = APIRouter()
 
+# MongoDB Collection
+resume_reports = db["resume_reports"]
 
 
 @router.post("/upload-resume")
@@ -45,6 +49,19 @@ async def upload_resume(file: UploadFile = File(...)):
     embeddings = create_embeddings(chunks)
     vector_store.create_index(embeddings, chunks)
 
+    # Save Report in MongoDB
+    resume_reports.insert_one({
+        "filename": file.filename,
+        "ats_score": ats_score,
+        "skills_found": skills,
+        "missing_skills": missing_skills,
+        "projects_count": insights["projects_count"],
+        "skills_count": insights["skills_count"],
+        "education": insights["education"],
+        "certifications_count": insights["certifications_count"],
+        "experience": insights["experience"]
+    })
+
     return {
         "filename": file.filename,
         "file_url": f"/uploads/{file.filename}",
@@ -61,6 +78,7 @@ async def upload_resume(file: UploadFile = File(...)):
 
 @router.post("/analyze-resume-ai")
 async def analyze_resume_ai():
+
     if not vector_store.chunks:
         return {"error": "No resume uploaded yet."}
 
@@ -68,43 +86,47 @@ async def analyze_resume_ai():
 
     prompt = f"""
     You are an expert ATS (Applicant Tracking System) Analyzer.
+
     Analyze the following resume text and provide a structured JSON response with:
-    1. A realistic ATS score (0 to 100) based on professional formatting, structural clarity, impact metrics, and general clarity.
-    2. A list of strengths (2-4 items).
-    3. A list of weaknesses (2-4 items).
-    4. A list of missing keywords/skills standard for their target domain.
-    5. Actionable improvement suggestions (3-5 items).
+
+    1. A realistic ATS score (0 to 100)
+    2. A list of strengths (2-4 items)
+    3. A list of weaknesses (2-4 items)
+    4. A list of missing keywords/skills
+    5. Actionable improvement suggestions (3-5 items)
 
     Resume Text:
     \"\"\"{resume_text}\"\"\"
 
-    Your output must be a valid JSON object. Do not wrap it in markdown code blocks like ```json ... ```. Just return the JSON object directly.
-    Example format:
-    {{
-        "ats_score": 75,
-        "strengths": ["Clear section headers", "Strong work history"],
-        "weaknesses": ["Lack of quantifiable metrics in project descriptions", "Vague summary"],
-        "missing_keywords": ["Docker", "Kubernetes", "CI/CD"],
-        "suggestions": ["Add numbers to describe project outcomes", "Create a dedicated skills section"]
-    }}
+    Return only valid JSON.
     """
+
     try:
         response = model.generate_content(prompt)
+
         clean_text = response.text.strip()
+
         if clean_text.startswith("```json"):
             clean_text = clean_text[7:]
+
         if clean_text.endswith("```"):
             clean_text = clean_text[:-3]
+
         clean_text = clean_text.strip()
 
         analysis = json.loads(clean_text)
+
         return analysis
+
     except Exception as e:
         print(f"Error in Gemini ATS analysis: {e}")
+
         return {
             "ats_score": 50,
             "strengths": ["Text parsed successfully"],
             "weaknesses": ["AI evaluation failed"],
             "missing_keywords": [],
-            "suggestions": ["Please try again later. Error: " + str(e)]
+            "suggestions": [
+                "Please try again later. Error: " + str(e)
+            ]
         }

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { FaRobot, FaBriefcase, FaChartLine, FaMagic, FaArrowRight, FaSearch } from "react-icons/fa";
 
-function Landing({ onGetStarted }) {
+function Landing({ token, setPage, onGetStarted }) {
   const features = [
     {
       icon: <FaChartLine className="text-4xl text-purple-400" />,
@@ -101,7 +101,7 @@ function Landing({ onGetStarted }) {
               onClick={onGetStarted}
               className="group flex items-center justify-center gap-3 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-purple-900/20 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              Get Started
+              {token ? "Go to Dashboard" : "Get Started"}
               <FaArrowRight className="group-hover:translate-x-1.5 transition-transform" />
             </button>
             <a
@@ -172,7 +172,7 @@ function Landing({ onGetStarted }) {
             onClick={onGetStarted}
             className="mt-8 bg-white hover:bg-slate-100 text-slate-950 px-8 py-4 rounded-2xl font-bold text-lg shadow-xl shadow-white/5 transition duration-300 inline-flex items-center gap-3 transform hover:-translate-y-0.5 active:translate-y-0"
           >
-            Optimize Your Resume Now
+            {token ? "Go to Dashboard" : "Optimize Your Resume Now"}
             <FaArrowRight />
           </button>
         </div>
