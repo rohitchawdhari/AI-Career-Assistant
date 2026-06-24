@@ -5,7 +5,6 @@ python-multipart
 python-docx
 pypdf
 google-generativeai
-sentence-transformers
 faiss-cpu
 numpy
 scikit-learn

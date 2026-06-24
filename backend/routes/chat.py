@@ -97,4 +97,6 @@ async def chat_with_history(data: ChatRequest):
             response = chat.send_message(latest_msg.content)
             return {"answer": response.text}
         except Exception as ex:
-            return {"answer": f"I encountered an error processing your chat: {str(ex)}"}
+            print(f"Chat failed completely: {ex}. Using fallback.")
+            from services.gemini_service import get_fallback_response
+            return {"answer": get_fallback_response(latest_msg.content)}
