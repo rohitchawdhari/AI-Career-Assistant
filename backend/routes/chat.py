@@ -59,7 +59,7 @@ async def chat_with_history(data: ChatRequest):
     )
 
     if vector_store.chunks:
-        resume_text = "\n".join(vector_store.chunks)
+        resume_text = vector_store.get_full_text()
         system_instruction += (
             f"\n\nThe user has uploaded a resume. Use this resume text to customize and "
             f"personalize your career advice, answers, and mock interviews:\n{resume_text}"

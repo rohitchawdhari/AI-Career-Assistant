@@ -55,7 +55,7 @@ async def upload_resume(file: UploadFile = File(...)):
     # RAG Processing
     chunks = split_text(text)
     embeddings = create_embeddings(chunks)
-    vector_store.create_index(embeddings, chunks)
+    vector_store.create_index(embeddings, chunks, text)
 
     # Save Report in MongoDB
     resume_reports.insert_one({
@@ -90,7 +90,7 @@ async def analyze_resume_ai():
     if not vector_store.chunks:
         return {"error": "No resume uploaded yet."}
 
-    resume_text = "\n".join(vector_store.chunks)
+    resume_text = vector_store.get_full_text()
     
     # Extract skills and calculate baseline score deterministically
     skills = extract_skills(resume_text)

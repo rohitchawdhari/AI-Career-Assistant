@@ -7,8 +7,9 @@ class VectorStore:
     def __init__(self):
         self.index = None
         self.chunks = []
+        self.full_text = ""
 
-    def create_index(self, embeddings, chunks):
+    def create_index(self, embeddings, chunks, full_text=""):
 
         dimension = embeddings.shape[1]
 
@@ -19,6 +20,12 @@ class VectorStore:
         )
 
         self.chunks = chunks
+        self.full_text = full_text
+
+    def get_full_text(self):
+        if hasattr(self, "full_text") and self.full_text:
+            return self.full_text
+        return "\n".join(self.chunks)
 
     def search(self, query_embedding, top_k=3):
 

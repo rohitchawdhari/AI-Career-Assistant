@@ -47,7 +47,7 @@ async def analyze_jd_ai(
     if not vector_store.chunks:
         return {"error": "Please upload a resume first."}
 
-    resume_text = "\n".join(vector_store.chunks)
+    resume_text = vector_store.get_full_text()
     jd_text = request.job_description
 
     prompt = f"""

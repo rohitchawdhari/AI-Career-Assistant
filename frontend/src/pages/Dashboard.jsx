@@ -411,7 +411,10 @@ function Dashboard({ user, onLogout }) {
                   }}
                   setSkills={setSkills}
                   setMissingSkills={setMissingSkills}
-                  setPdfUrl={setPdfUrl}
+                  setPdfUrl={(url) => {
+                    setAiAtsData(null);
+                    setPdfUrl(url);
+                  }}
                   setProjectsCount={setProjectsCount}
                   setSkillsCount={setSkillsCount}
                   setEducation={setEducation}

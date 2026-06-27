@@ -10,3 +10,7 @@ numpy
 scikit-learn
 requests
 fastapi-mail
+pymongo
+passlib
+bcrypt
+python-jose

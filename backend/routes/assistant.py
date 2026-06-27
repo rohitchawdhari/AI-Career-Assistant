@@ -29,7 +29,7 @@ async def improve_resume(request: ImproveRequest):
     if not vector_store.chunks:
         return {"error": "Please upload a resume first."}
 
-    resume_text = "\n".join(vector_store.chunks)
+    resume_text = vector_store.get_full_text()
     role_clause = f" tailored for a '{request.target_role}' role" if request.target_role else ""
 
     prompt = f"""
@@ -89,7 +89,7 @@ async def generate_cover_letter(request: CoverLetterRequest):
     if not vector_store.chunks:
         return {"error": "Please upload a resume first."}
 
-    resume_text = "\n".join(vector_store.chunks)
+    resume_text = vector_store.get_full_text()
     jd_text = request.job_description
 
     prompt = f"""
@@ -117,7 +117,7 @@ async def generate_interview_questions(request: InterviewRequest):
     if not vector_store.chunks:
         return {"error": "Please upload a resume first."}
 
-    resume_text = "\n".join(vector_store.chunks)
+    resume_text = vector_store.get_full_text()
     jd_clause = f"\nJob Description:\n\"\"\"{request.job_description}\"\"\"" if request.job_description else ""
 
     prompt = f"""
@@ -171,7 +171,7 @@ async def generate_roadmap(request: RoadmapRequest):
     if not vector_store.chunks:
         return {"error": "Please upload a resume first."}
 
-    resume_text = "\n".join(vector_store.chunks)
+    resume_text = vector_store.get_full_text()
 
     prompt = f"""
     You are an expert technical career coach.
