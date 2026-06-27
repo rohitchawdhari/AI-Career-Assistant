@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, BackgroundTasks
 from pydantic import BaseModel
 from passlib.context import CryptContext
 from jose import jwt
@@ -6,6 +6,13 @@ import datetime
 import time
 import random
 from db import db
+
+from services.email_service import (
+    send_welcome_email,
+    send_admin_registration_alert,
+    send_login_email,
+    send_admin_login_alert
+)
 
 router = APIRouter()
 
@@ -50,7 +57,7 @@ class VerifyOTPRequest(BaseModel):
 
 
 @router.post("/signup")
-def signup(user: UserSignup):
+def signup(user: UserSignup, background_tasks: BackgroundTasks):
     existing_user = users.find_one(
         {"email": user.email}
     )
@@ -65,6 +72,8 @@ def signup(user: UserSignup):
         user.password
     )
 
+    registration_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
     result = users.insert_one({
         "name": user.name,
         "email": user.email,
@@ -77,13 +86,19 @@ def signup(user: UserSignup):
     print("TOTAL USERS:", users.count_documents({}))
     print("================================")
 
+    try:
+        background_tasks.add_task(send_welcome_email, user.email, user.name, registration_time)
+        background_tasks.add_task(send_admin_registration_alert, user.name, user.email, registration_time)
+    except Exception as e:
+        print(f"FAILED TO QUEUE SIGNUP EMAILS: {e}")
+
     return {
         "message": "User registered successfully"
     }
 
 
 @router.post("/login")
-def login(user: UserLogin):
+def login(user: UserLogin, background_tasks: BackgroundTasks):
     existing_user = users.find_one(
         {"email": user.email}
     )
@@ -122,7 +137,7 @@ def login(user: UserLogin):
 
     # Token expiration in 1 hour
     expire_delta = datetime.timedelta(hours=1)
-    expires_at = datetime.datetime.utcnow() + expire_delta
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + expire_delta
 
     token = jwt.encode(
         {
@@ -163,6 +178,14 @@ def login(user: UserLogin):
         created_at = datetime.datetime.utcnow().isoformat()
         # Save creation date in user document if missing
         users.update_one({"_id": existing_user["_id"]}, {"$set": {"created_at": created_at}})
+
+    login_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+
+    try:
+        background_tasks.add_task(send_login_email, user.email, existing_user["name"], login_time)
+        background_tasks.add_task(send_admin_login_alert, existing_user["name"], user.email, login_time)
+    except Exception as e:
+        print(f"FAILED TO QUEUE LOGIN EMAILS: {e}")
 
     return {
         "access_token": token,
