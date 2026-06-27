@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from resume.parser import parse_file
 from resume.skill_extractor import extract_skills
 from resume.ats_score import calculate_ats_score
@@ -13,6 +13,7 @@ from db import db
 
 import os
 import json
+import re
 
 router = APIRouter()
 
@@ -35,11 +36,18 @@ async def upload_resume(file: UploadFile = File(...)):
 
     text = parse_file(file_path)
 
+    # Validation: Ensure text is not empty
+    if not text or not text.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Failed to parse resume text. Please ensure the file is not empty or scanned."
+        )
+
     # Skills Extraction
     skills = extract_skills(text)
 
     # ATS Score
-    ats_score, missing_skills = calculate_ats_score(skills)
+    ats_score, missing_skills = calculate_ats_score(text, skills)
 
     # Resume Insights
     insights = extract_resume_insights(text, skills)
@@ -83,6 +91,10 @@ async def analyze_resume_ai():
         return {"error": "No resume uploaded yet."}
 
     resume_text = "\n".join(vector_store.chunks)
+    
+    # Extract skills and calculate baseline score deterministically
+    skills = extract_skills(resume_text)
+    calculated_score, missing_skills = calculate_ats_score(resume_text, skills)
 
     prompt = f"""
     You are an expert ATS (Applicant Tracking System) Analyzer.
@@ -115,18 +127,39 @@ async def analyze_resume_ai():
         clean_text = clean_text.strip()
 
         analysis = json.loads(clean_text)
+        
+        # Override/Sync with our advanced python computed score to ensure consistency!
+        analysis["ats_score"] = calculated_score
+        
+        # Make sure missing_keywords has the calculated missing skills as well
+        if "missing_keywords" in analysis:
+            # Combine Gemini's missing keywords with our deterministic core ones
+            combined_missing = list(set(analysis.get("missing_keywords", []) + missing_skills))
+            analysis["missing_keywords"] = combined_missing
+        else:
+            analysis["missing_keywords"] = missing_skills
 
         return analysis
 
     except Exception as e:
         print(f"Error in Gemini ATS analysis: {e}")
-
+        
+        has_email = bool(re.search(r"[\w\.-]+@[\w\.-]+\.\w+", resume_text))
+        
         return {
-            "ats_score": 50,
-            "strengths": ["Text parsed successfully"],
-            "weaknesses": ["AI evaluation failed"],
-            "missing_keywords": [],
+            "ats_score": calculated_score,
+            "strengths": [
+                "Technical skills list detected" if skills else "Basic formatting parsed",
+                "Contact information present" if has_email else "Resume layout is structured"
+            ],
+            "weaknesses": [
+                "AI analysis tool is running in offline/fallback mode.",
+                "Missing key tech skills" if len(missing_skills) > 3 else "Action verbs density can be improved"
+            ],
+            "missing_keywords": missing_skills,
             "suggestions": [
-                "Please try again later. Error: " + str(e)
+                "Please configure a valid GEMINI_API_KEY in backend/.env for live AI advice.",
+                "Incorporate more industry-standard technical keywords in your skills section.",
+                "Quantify your accomplishments using percentages, numbers, or timeframes."
             ]
         }

@@ -9,3 +9,4 @@ faiss-cpu
 numpy
 scikit-learn
 requests
+fastapi-mail
