@@ -58,8 +58,9 @@ class VerifyOTPRequest(BaseModel):
 
 @router.post("/signup")
 def signup(user: UserSignup, background_tasks: BackgroundTasks):
+    email = user.email.strip().lower()
     existing_user = users.find_one(
-        {"email": user.email}
+        {"email": email}
     )
 
     if existing_user:
@@ -75,8 +76,8 @@ def signup(user: UserSignup, background_tasks: BackgroundTasks):
     registration_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     result = users.insert_one({
-        "name": user.name,
-        "email": user.email,
+        "name": user.name.strip(),
+        "email": email,
         "password": hashed_password,
         "created_at": datetime.datetime.utcnow().isoformat()
     })
@@ -87,8 +88,8 @@ def signup(user: UserSignup, background_tasks: BackgroundTasks):
     print("================================")
 
     try:
-        background_tasks.add_task(send_welcome_email, user.email, user.name, registration_time)
-        background_tasks.add_task(send_admin_registration_alert, user.name, user.email, registration_time)
+        background_tasks.add_task(send_welcome_email, email, user.name.strip(), registration_time)
+        background_tasks.add_task(send_admin_registration_alert, user.name.strip(), email, registration_time)
     except Exception as e:
         print(f"FAILED TO QUEUE SIGNUP EMAILS: {e}")
 
@@ -99,8 +100,9 @@ def signup(user: UserSignup, background_tasks: BackgroundTasks):
 
 @router.post("/login")
 def login(user: UserLogin, background_tasks: BackgroundTasks):
+    email = user.email.strip().lower()
     existing_user = users.find_one(
-        {"email": user.email}
+        {"email": email}
     )
 
     print("USER FOUND:", existing_user)
@@ -150,12 +152,12 @@ def login(user: UserLogin, background_tasks: BackgroundTasks):
     )
 
     # Log prior last login time before saving this login
-    last_login_record = list(login_history.find({"email": user.email}).sort("timestamp", -1).limit(1))
+    last_login_record = list(login_history.find({"email": email}).sort("timestamp", -1).limit(1))
     last_login_time = last_login_record[0]["timestamp"] if last_login_record else int(time.time())
 
     # Save to MongoDB login history
     login_entry = {
-        "email": user.email,
+        "email": email,
         "timestamp": int(time.time()),
         "ip_address": "127.0.0.1",
         "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
@@ -163,7 +165,7 @@ def login(user: UserLogin, background_tasks: BackgroundTasks):
     login_history.insert_one(login_entry)
 
     # Fetch last 5 login history entries for this user
-    prior_history = list(login_history.find({"email": user.email}).sort("timestamp", -1).limit(5))
+    prior_history = list(login_history.find({"email": email}).sort("timestamp", -1).limit(5))
     history_list = []
     for item in prior_history:
         history_list.append({
@@ -182,8 +184,8 @@ def login(user: UserLogin, background_tasks: BackgroundTasks):
     login_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     try:
-        background_tasks.add_task(send_login_email, user.email, existing_user["name"], login_time)
-        background_tasks.add_task(send_admin_login_alert, existing_user["name"], user.email, login_time)
+        background_tasks.add_task(send_login_email, email, existing_user["name"], login_time)
+        background_tasks.add_task(send_admin_login_alert, existing_user["name"], email, login_time)
     except Exception as e:
         print(f"FAILED TO QUEUE LOGIN EMAILS: {e}")
 
@@ -206,14 +208,15 @@ def change_password(data: PasswordChangeRequest, authorization: str = Header(Non
     token = authorization.split(" ")[1]
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email_from_token = payload.get("email")
+        email_from_token = payload.get("email").strip().lower()
     except Exception:
         raise HTTPException(status_code=401, detail="Token has expired or is invalid")
 
-    if email_from_token != data.email:
+    email = data.email.strip().lower()
+    if email_from_token != email:
         raise HTTPException(status_code=403, detail="Forbidden request")
 
-    existing_user = users.find_one({"email": data.email})
+    existing_user = users.find_one({"email": email})
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -223,14 +226,15 @@ def change_password(data: PasswordChangeRequest, authorization: str = Header(Non
 
     # Hash and update new password
     hashed_password = pwd_context.hash(data.new_password)
-    users.update_one({"email": data.email}, {"$set": {"password": hashed_password}})
+    users.update_one({"email": email}, {"$set": {"password": hashed_password}})
 
     return {"message": "Password changed successfully"}
 
 
 @router.post("/forgot-password")
 def forgot_password(data: ForgotPasswordRequest):
-    existing_user = users.find_one({"email": data.email})
+    email = data.email.strip().lower()
+    existing_user = users.find_one({"email": email})
     if not existing_user:
         raise HTTPException(status_code=404, detail="Email is not registered")
 
@@ -240,14 +244,14 @@ def forgot_password(data: ForgotPasswordRequest):
 
     # Store OTP in DB
     otp_store.update_one(
-        {"email": data.email},
+        {"email": email},
         {"$set": {"otp": otp, "expires_at": expires_at}},
         upsert=True
     )
 
     # Print to console for server/debug logging
     print("=========================================")
-    print(f"PASSWORD RESET OTP FOR {data.email}: {otp}")
+    print(f"PASSWORD RESET OTP FOR {email}: {otp}")
     print("=========================================")
 
     # Return OTP in response (for developer mock/testing purposes)
@@ -259,25 +263,27 @@ def forgot_password(data: ForgotPasswordRequest):
 
 @router.post("/verify-otp")
 def verify_otp(data: VerifyOTPRequest):
-    record = otp_store.find_one({"email": data.email})
+    email = data.email.strip().lower()
+    otp = data.otp.strip()
+    record = otp_store.find_one({"email": email})
     if not record:
         raise HTTPException(status_code=400, detail="No OTP requested for this email")
 
-    if record["otp"] != data.otp:
+    if record["otp"].strip() != otp:
         raise HTTPException(status_code=400, detail="Invalid OTP code")
 
     if int(time.time()) > record["expires_at"]:
         raise HTTPException(status_code=400, detail="OTP has expired")
 
-    existing_user = users.find_one({"email": data.email})
+    existing_user = users.find_one({"email": email})
     if not existing_user:
         raise HTTPException(status_code=404, detail="User not found")
 
     # Hash and update password
     hashed_password = pwd_context.hash(data.new_password)
-    users.update_one({"email": data.email}, {"$set": {"password": hashed_password}})
+    users.update_one({"email": email}, {"$set": {"password": hashed_password}})
 
     # Remove verified OTP
-    otp_store.delete_one({"email": data.email})
+    otp_store.delete_one({"email": email})
 
     return {"message": "Password has been reset successfully"}

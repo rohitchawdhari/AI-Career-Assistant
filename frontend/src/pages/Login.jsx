@@ -32,9 +32,11 @@ function Login({ setPage, setToken, setUser }) {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!email) {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
       newErrors.email = "Email is required";
-    } else if (!emailRegex.test(email)) {
+    } else if (!emailRegex.test(trimmedEmail)) {
       newErrors.email = "Please enter a valid email address";
     }
 
@@ -57,7 +59,7 @@ function Login({ setPage, setToken, setUser }) {
 
     try {
       const res = await API.post("/login", {
-        email,
+        email: email.trim().toLowerCase(),
         password,
       });
 
@@ -82,7 +84,14 @@ function Login({ setPage, setToken, setUser }) {
       }, 800);
 
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || "Invalid email or password";
+      let errorMsg = "Invalid email or password";
+      if (err.response?.data?.detail) {
+        errorMsg = typeof err.response.data.detail === "string" 
+          ? err.response.data.detail 
+          : "Invalid details supplied.";
+      } else if (err.message === "Network Error") {
+        errorMsg = "Network Error: Cannot connect to the server. Please verify the backend is running.";
+      }
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -91,14 +100,15 @@ function Login({ setPage, setToken, setUser }) {
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-    if (!forgotEmail) {
+    const trimmedEmail = forgotEmail.trim().toLowerCase();
+    if (!trimmedEmail) {
       toast.error("Please enter your registered email address.");
       return;
     }
 
     setForgotLoading(true);
     try {
-      const res = await API.post("/forgot-password", { email: forgotEmail });
+      const res = await API.post("/forgot-password", { email: trimmedEmail });
       toast.success(res.data.message || "OTP has been sent to your email!");
       
       // Auto-populate for ease of developer testing if present in response
@@ -109,7 +119,15 @@ function Login({ setPage, setToken, setUser }) {
       
       setView("verify");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Email is not registered.");
+      let errorMsg = "Email is not registered.";
+      if (err.response?.data?.detail) {
+        errorMsg = typeof err.response.data.detail === "string" 
+          ? err.response.data.detail 
+          : "Forgot password request failed.";
+      } else if (err.message === "Network Error") {
+        errorMsg = "Network Error: Cannot connect to the server. Please verify the backend is running.";
+      }
+      toast.error(errorMsg);
     } finally {
       setForgotLoading(false);
     }
@@ -117,7 +135,10 @@ function Login({ setPage, setToken, setUser }) {
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
-    if (!otp || !newPassword || !confirmPassword) {
+    const trimmedEmail = forgotEmail.trim().toLowerCase();
+    const trimmedOtp = otp.trim();
+
+    if (!trimmedOtp || !newPassword || !confirmPassword) {
       toast.error("All verification fields are required.");
       return;
     }
@@ -135,22 +156,30 @@ function Login({ setPage, setToken, setUser }) {
     setForgotLoading(true);
     try {
       const res = await API.post("/verify-otp", {
-        email: forgotEmail,
-        otp,
+        email: trimmedEmail,
+        otp: trimmedOtp,
         new_password: newPassword,
       });
 
       toast.success(res.data.message || "Password reset successful! Please login.");
       
       // Reset states
-      setEmail(forgotEmail);
+      setEmail(trimmedEmail);
       setForgotEmail("");
       setOtp("");
       setNewPassword("");
       setConfirmPassword("");
       setView("login");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Verification failed. Check OTP code.");
+      let errorMsg = "Verification failed. Check OTP code.";
+      if (err.response?.data?.detail) {
+        errorMsg = typeof err.response.data.detail === "string" 
+          ? err.response.data.detail 
+          : "Invalid OTP code.";
+      } else if (err.message === "Network Error") {
+        errorMsg = "Network Error: Cannot connect to the server. Please verify the backend is running.";
+      }
+      toast.error(errorMsg);
     } finally {
       setForgotLoading(false);
     }
