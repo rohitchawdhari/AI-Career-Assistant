@@ -62,6 +62,7 @@ app.include_router(
 
 
 @app.get("/")
+@app.head("/")
 def home():
     return {
         "message": "AI Career Assistant Backend Running"
