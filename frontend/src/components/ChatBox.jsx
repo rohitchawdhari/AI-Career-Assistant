@@ -89,7 +89,7 @@ function ChatBox({ resetTrigger }) {
         return (
           <code
             key={i}
-            className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-1.5 py-0.5 rounded font-mono text-xs text-pink-650 dark:text-pink-400"
+            className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-1.5 py-0.5 rounded font-mono text-xs text-pink-600 dark:text-pink-400"
           >
             {part.slice(1, -1)}
           </code>
@@ -194,7 +194,7 @@ function ChatBox({ resetTrigger }) {
       )}
 
       {/* Chat Area */}
-      <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-850 rounded-2xl p-5 h-[450px] overflow-y-auto shadow-inner">
+      <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 h-[450px] overflow-y-auto shadow-inner">
         {messages.length === 0 ? (
           <div className="h-full flex items-center justify-center">
             <div className="text-center max-w-sm">
@@ -213,7 +213,7 @@ function ChatBox({ resetTrigger }) {
                   className={`max-w-[85%] px-5 py-3.5 rounded-2xl shadow-md border ${
                     msg.role === "user"
                       ? "bg-gradient-to-r from-purple-600 to-indigo-600 border-transparent text-white"
-                      : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-850 text-slate-800 dark:text-slate-150"
+                      : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-800 dark:text-slate-200"
                   }`}
                 >
                   <p className="text-[10px] uppercase font-bold tracking-wider opacity-65 mb-1.5">
@@ -228,7 +228,7 @@ function ChatBox({ resetTrigger }) {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-850 px-5 py-4 rounded-2xl shadow-md">
+                <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 px-5 py-4 rounded-2xl shadow-md">
                   <p className="text-[10px] uppercase font-bold tracking-wider opacity-65 mb-2">Career Copilot</p>
                   <div className="flex gap-1.5 text-purple-600 dark:text-purple-400">
                     <span className="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: "0ms" }} />

@@ -211,7 +211,7 @@ function UserProfile({ user, onLogout, atsScore, filename }) {
         
         {/* Section 1: Edit Details */}
         <div className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-xl">
-          <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-850 pb-4">
+          <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-xl">
               <FaUser className="text-xl" />
             </div>
@@ -287,7 +287,7 @@ function UserProfile({ user, onLogout, atsScore, filename }) {
 
         {/* Section 2: Change Password */}
         <div className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-xl">
-          <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-850 pb-4">
+          <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="p-3 bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-xl">
               <FaShieldAlt className="text-xl" />
             </div>
@@ -354,7 +354,7 @@ function UserProfile({ user, onLogout, atsScore, filename }) {
 
         {/* Section 3: User Login Activity Table */}
         <div className="bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-xl">
-          <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-850 pb-4">
+          <div className="flex items-center gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="p-3 bg-cyan-100 dark:bg-cyan-950/30 text-cyan-600 dark:text-cyan-400 rounded-xl">
               <FaChartLine className="text-xl" />
             </div>
@@ -364,7 +364,7 @@ function UserProfile({ user, onLogout, atsScore, filename }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-150 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/30">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-900 text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
