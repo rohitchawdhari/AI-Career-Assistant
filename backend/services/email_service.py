@@ -3,6 +3,7 @@ from pydantic import EmailStr
 from dotenv import load_dotenv
 import os
 import traceback
+import httpx
 
 load_dotenv()
 
@@ -37,11 +38,67 @@ ADMIN_EMAIL = os.getenv("MAIL_FROM") or os.getenv("MAIL_USERNAME") or "rohitchaw
 
 
 async def _send_message_safe(message: MessageSchema):
-    """Central helper to send emails and output exact failure stack traces for debug/logs."""
+    """Central helper to send emails. Uses Brevo or Resend HTTPS APIs if configured, else falls back to SMTP."""
+    
+    # 1. Try Brevo API first (best for unrestricted sending)
+    brevo_key = os.getenv("BREVO_API_KEY")
+    if brevo_key:
+        print("Attempting to send email via Brevo HTTPS API...")
+        url = "https://api.brevo.com/v3/smtp/email"
+        headers = {
+            "api-key": brevo_key,
+            "Content-Type": "application/json"
+        }
+        sender_email = os.getenv("MAIL_FROM") or "rohitchawdhari48@gmail.com"
+        payload = {
+            "sender": {"name": "AI Career Assistant", "email": sender_email},
+            "to": [{"email": email} for email in message.recipients],
+            "subject": message.subject,
+            "textContent": message.body
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(url, json=payload, headers=headers, timeout=10)
+                if res.status_code in [200, 201, 202]:
+                    print(f"Brevo API Success: Email sent to {message.recipients}")
+                    return
+                else:
+                    print(f"Brevo API Failure: status={res.status_code}, response={res.text}")
+        except Exception as e:
+            print(f"Brevo API Exception: {e}")
+
+    # 2. Try Resend API second
+    resend_key = os.getenv("RESEND_API_KEY")
+    if resend_key:
+        print("Attempting to send email via Resend HTTPS API...")
+        url = "https://api.resend.com/emails"
+        headers = {
+            "Authorization": f"Bearer {resend_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "from": "AI Career Assistant <onboarding@resend.dev>",
+            "to": message.recipients,
+            "subject": message.subject,
+            "text": message.body
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(url, json=payload, headers=headers, timeout=10)
+                if res.status_code in [200, 201, 202]:
+                    print(f"Resend API Success: Email sent to {message.recipients}")
+                    return
+                else:
+                    print(f"Resend API Failure: status={res.status_code}, response={res.text}")
+        except Exception as e:
+            print(f"Resend API Exception: {e}")
+
+    # 3. Fallback to direct SMTP
+    print("No REST Email API keys (BREVO_API_KEY / RESEND_API_KEY) found. Falling back to SMTP connection...")
     try:
         fm = FastMail(conf)
         await fm.send_message(message)
-        print(f"EMAIL SENT SUCCESS to {message.recipients}")
+        print(f"SMTP Success: Email sent to {message.recipients}")
     except Exception as e:
         print(f"SMTP ERROR: Failed to send email to {message.recipients}. Details: {e}")
         traceback.print_exc()
