@@ -2,22 +2,46 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr
 from dotenv import load_dotenv
 import os
+import traceback
 
 load_dotenv()
 
-conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
-    MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_PORT=int(os.getenv("MAIL_PORT")),
-    MAIL_SERVER=os.getenv("MAIL_SERVER"),
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
-    USE_CREDENTIALS=True
-)
+# Print configs on load to verify variables exist (omitting secrets)
+print("Loading Email connection config...")
+print(f"MAIL_USERNAME: {os.getenv('MAIL_USERNAME')}")
+print(f"MAIL_SERVER: {os.getenv('MAIL_SERVER')}")
+print(f"MAIL_PORT: {os.getenv('MAIL_PORT')}")
+print(f"MAIL_FROM: {os.getenv('MAIL_FROM')}")
+print(f"MAIL_PASSWORD length: {len(os.getenv('MAIL_PASSWORD') or '')}")
+
+try:
+    conf = ConnectionConfig(
+        MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
+        MAIL_FROM=os.getenv("MAIL_FROM"),
+        MAIL_PORT=int(os.getenv("MAIL_PORT") or 587),
+        MAIL_SERVER=os.getenv("MAIL_SERVER"),
+        MAIL_STARTTLS=True,
+        MAIL_SSL_TLS=False,
+        USE_CREDENTIALS=True
+    )
+except Exception as e:
+    print("CRITICAL: Failed to initialize ConnectionConfig for FastMail!")
+    traceback.print_exc()
 
 # Admin email is configured in environment (fallback to MAIL_USERNAME if MAIL_FROM not set)
 ADMIN_EMAIL = os.getenv("MAIL_FROM") or os.getenv("MAIL_USERNAME") or "rohitchawdhari48@gmail.com"
+
+
+async def _send_message_safe(message: MessageSchema):
+    """Central helper to send emails and output exact failure stack traces for debug/logs."""
+    try:
+        fm = FastMail(conf)
+        await fm.send_message(message)
+        print(f"EMAIL SENT SUCCESS to {message.recipients}")
+    except Exception as e:
+        print(f"SMTP ERROR: Failed to send email to {message.recipients}. Details: {e}")
+        traceback.print_exc()
 
 
 async def send_welcome_email(
@@ -51,9 +75,7 @@ AI Career Assistant Team
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)
 
 
 async def send_admin_registration_alert(
@@ -78,9 +100,7 @@ AI Career Assistant
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)
 
 
 async def send_login_email(
@@ -106,9 +126,7 @@ AI Career Assistant Team
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)
 
 
 async def send_admin_login_alert(
@@ -133,9 +151,7 @@ AI Career Assistant
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)
 
 
 async def send_otp_email(
@@ -162,9 +178,7 @@ AI Career Assistant Team
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)
 
 
 async def send_logout_email(
@@ -185,9 +199,7 @@ AI Career Assistant Team
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)
 
 
 async def send_password_changed_email(
@@ -208,6 +220,4 @@ AI Career Assistant Team
 """,
         subtype="plain"
     )
-
-    fm = FastMail(conf)
-    await fm.send_message(message)
+    await _send_message_safe(message)

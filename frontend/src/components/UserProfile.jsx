@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { FaUser, FaBriefcase, FaSave, FaSignOutAlt, FaLock, FaKey, FaShieldAlt, FaChartLine } from "react-icons/fa";
+import { FaUser, FaBriefcase, FaSave, FaSignOutAlt, FaLock, FaKey, FaShieldAlt, FaChartLine, FaTrashAlt } from "react-icons/fa";
 import API from "../services/api";
 
 function UserProfile({ user, onLogout, atsScore, filename }) {
@@ -117,6 +117,20 @@ function UserProfile({ user, onLogout, atsScore, filename }) {
       toast.error(errorMsg);
     } finally {
       setPasswordLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm("WARNING: Are you absolutely sure you want to permanently delete your account? This action is irreversible and all your data (including profile history) will be permanently lost.");
+    if (!confirmed) return;
+
+    try {
+      const res = await API.delete("/delete-account");
+      toast.success(res.data.message || "Account permanently deleted. Bye! 👋");
+      onLogout();
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      toast.error(err.response?.data?.detail || "Failed to delete account. Please try again.");
     }
   };
 
@@ -401,6 +415,35 @@ function UserProfile({ user, onLogout, atsScore, filename }) {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Section 4: Danger Zone */}
+        <div className="bg-red-50/20 dark:bg-red-950/10 border border-red-200 dark:border-red-900/40 rounded-3xl p-6 md:p-8 shadow-xl backdrop-blur-xl">
+          <div className="flex items-center gap-4 mb-6 border-b border-red-200/30 dark:border-red-900/30 pb-4">
+            <div className="p-3 bg-red-100 dark:bg-red-900/30 text-red-650 dark:text-red-400 rounded-xl">
+              <FaTrashAlt className="text-xl" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-red-750 dark:text-red-400">Danger Zone</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5">Irreversible account actions.</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h4 className="text-sm font-bold text-slate-800 dark:text-white">Delete Account Permanently</h4>
+              <p className="text-xs text-slate-550 dark:text-slate-400 max-w-md">
+                Once deleted, your profile details, analysis records, and history are permanently removed. This cannot be undone.
+              </p>
+            </div>
+            
+            <button
+              onClick={handleDeleteAccount}
+              className="px-5 py-3 border border-red-200 dark:border-red-900/40 text-white bg-red-600 hover:bg-red-500 rounded-xl font-bold text-sm transition cursor-pointer shrink-0"
+            >
+              Delete Account
+            </button>
           </div>
         </div>
 

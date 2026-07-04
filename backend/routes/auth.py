@@ -321,3 +321,27 @@ def logout(data: LogoutRequest, background_tasks: BackgroundTasks):
         print(f"FAILED TO QUEUE LOGOUT EMAIL: {e}")
 
     return {"message": "Logged out successfully"}
+
+
+@router.delete("/delete-account")
+def delete_account(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized session")
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("email").strip().lower()
+    except Exception:
+        raise HTTPException(status_code=401, detail="Token has expired or is invalid")
+
+    # Check if user exists
+    existing_user = users.find_one({"email": email})
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete user collections
+    users.delete_one({"email": email})
+    login_history.delete_many({"email": email})
+    otp_store.delete_many({"email": email})
+
+    return {"message": "Account permanently deleted"}
