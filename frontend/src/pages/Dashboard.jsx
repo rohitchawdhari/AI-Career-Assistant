@@ -514,10 +514,6 @@ function Dashboard({ user, onLogout }) {
         {activeTab === "jd" && (
           <JDAnalyzer
             user={user}
-            resumeFilename={filename}
-            setResumeFilename={setFilename}
-            pdfUrl={pdfUrl}
-            setPdfUrl={setPdfUrl}
             matchScore={matchScore}
             setMatchScore={setMatchScore}
             matchedSkills={matchedSkills}
@@ -528,14 +524,6 @@ function Dashboard({ user, onLogout }) {
             setKeywordGaps={setKeywordGaps}
             jdSuggestions={jdSuggestions}
             setJdSuggestions={setJdSuggestions}
-            setAtsScore={setAtsScore}
-            setSkills={setSkills}
-            setMissingSkills={setMissingSkills}
-            setProjectsCount={setProjectsCount}
-            setSkillsCount={setSkillsCount}
-            setEducation={setEducation}
-            setCertificationsCount={setCertificationsCount}
-            setExperience={setExperience}
           />
         )}
 

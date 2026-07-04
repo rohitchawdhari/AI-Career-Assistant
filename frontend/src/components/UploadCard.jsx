@@ -82,9 +82,8 @@ function UploadCard({
       );
 
       if (res.data.file_url) {
-        setPdfUrl(
-          `http://127.0.0.1:8000${res.data.file_url}`
-        );
+        const baseURL = API.defaults.baseURL || "http://127.0.0.1:8000";
+        setPdfUrl(`${baseURL}${res.data.file_url}`);
       }
 
       toast.success(

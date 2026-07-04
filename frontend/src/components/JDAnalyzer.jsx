@@ -18,10 +18,6 @@ import API from "../services/api";
 
 function JDAnalyzer({
   user,
-  resumeFilename,
-  setResumeFilename,
-  pdfUrl,
-  setPdfUrl,
   matchScore,
   setMatchScore,
   matchedSkills,
@@ -31,21 +27,17 @@ function JDAnalyzer({
   keywordGaps,
   setKeywordGaps,
   jdSuggestions,
-  setJdSuggestions,
-  setAtsScore,
-  setSkills,
-  setMissingSkills,
-  setProjectsCount,
-  setSkillsCount,
-  setEducation,
-  setCertificationsCount,
-  setExperience
+  setJdSuggestions
 }) {
   // Input Options: "paste", "pdf", "docx"
   const [jdTab, setJdTab] = useState("paste");
   const [jobDescription, setJobDescription] = useState("");
   const [jdFile, setJdFile] = useState(null);
   
+  // Isolated Local Resume state for JD tab ONLY
+  const [jdResumeFilename, setJdResumeFilename] = useState("");
+  const [jdResumeText, setJdResumeText] = useState("");
+
   // Loadings
   const [resumeLoading, setResumeLoading] = useState(false);
   const [jdLoading, setJdLoading] = useState(false);
@@ -76,7 +68,7 @@ function JDAnalyzer({
     return html;
   };
 
-  // Upload/Replace Resume Handler
+  // Upload/Replace Resume Handler (JD tab specific)
   const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -86,25 +78,16 @@ function JDAnalyzer({
 
     try {
       setResumeLoading(true);
-      const res = await API.post("/upload-resume", formData, {
+      const res = await API.post("/extract-text", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      setAtsScore(res.data.ats_score);
-      setSkills(res.data.skills_found || []);
-      setMissingSkills(res.data.missing_skills || []);
-      setProjectsCount(res.data.projects_count || 0);
-      setSkillsCount(res.data.skills_count || 0);
-      setEducation(res.data.education || "Not Found");
-      setCertificationsCount(res.data.certifications_count || 0);
-      setExperience(res.data.experience || "Fresher");
-      
-      setResumeFilename(file.name);
-      setPdfUrl(res.data.file_url || "uploaded");
-      toast.success("Resume uploaded successfully! 📄");
+      setJdResumeText(res.data.text || "");
+      setJdResumeFilename(file.name);
+      toast.success("Resume text extracted for JD Matcher! 📄");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.detail || "Failed to upload resume.");
+      toast.error(err.response?.data?.detail || "Failed to extract text from resume.");
     } finally {
       setResumeLoading(false);
     }
@@ -136,16 +119,13 @@ function JDAnalyzer({
     }
   };
 
-  // Clear Resume Session
+  // Clear Resume Session (JD tab specific)
   const handleClearResume = () => {
-    setResumeFilename("");
-    setPdfUrl("");
-    setAtsScore(null);
-    setSkills([]);
-    setMissingSkills([]);
+    setJdResumeFilename("");
+    setJdResumeText("");
     setAnalysisResult(null);
     setOptimizedData(null);
-    toast.info("Active resume cleared.");
+    toast.info("JD resume input cleared.");
   };
 
   // Clear JD Input
@@ -159,7 +139,7 @@ function JDAnalyzer({
 
   // Analyze Resume vs JD Handler
   const handleAnalyze = async () => {
-    if (!resumeFilename || !pdfUrl) {
+    if (!jdResumeFilename || !jdResumeText.trim()) {
       toast.error("Please upload a resume first.");
       return;
     }
@@ -174,7 +154,8 @@ function JDAnalyzer({
       setOptimizedData(null);
 
       const res = await API.post("/analyze-resume-jd", {
-        job_description: jobDescription
+        job_description: jobDescription,
+        resume_text: jdResumeText
       });
 
       setAnalysisResult(res);
@@ -195,12 +176,13 @@ function JDAnalyzer({
 
   // Optimize Resume Handler
   const handleOptimize = async () => {
-    if (!jobDescription.trim()) return;
+    if (!jobDescription.trim() || !jdResumeText.trim()) return;
 
     try {
       setOptimizeLoading(true);
       const res = await API.post("/optimize-resume", {
-        job_description: jobDescription
+        job_description: jobDescription,
+        resume_text: jdResumeText
       });
       setOptimizedData(res.data);
       toast.success("Resume optimized and tailored successfully! ⚡");
@@ -318,21 +300,21 @@ function JDAnalyzer({
         <div className="bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
           <div>
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-slate-800 dark:text-white">
-              <span>📄</span> Active Resume Status
+              <span>📄</span> JD Target Resume
             </h3>
             <p className="text-slate-400 text-xs mb-6">
-              Only one active resume can be compared against Job Descriptions at any time.
+              Upload a resume specifically to compare against this Job Description. (Isolated from Overview)
             </p>
 
-            {resumeFilename ? (
+            {jdResumeFilename ? (
               <div className="p-5 rounded-2xl bg-purple-50/30 dark:bg-purple-950/10 border border-purple-100 dark:border-purple-900/30 flex items-start gap-4">
                 <FaCheckCircle className="text-purple-500 text-xl shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">
-                    {resumeFilename}
+                    {jdResumeFilename}
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
-                    Factual details and parsed chunks are loaded into the active vector store index.
+                    Text extracted locally. Your main profile resume is untouched.
                   </p>
                 </div>
               </div>
@@ -352,7 +334,7 @@ function JDAnalyzer({
           </div>
 
           <div className="mt-8 flex gap-3">
-            {resumeFilename ? (
+            {jdResumeFilename ? (
               <>
                 <label className="flex-1 flex justify-center items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-750 px-4 py-3 rounded-xl text-sm font-bold cursor-pointer transition">
                   <FaUpload />
@@ -501,15 +483,15 @@ function JDAnalyzer({
             🚀 Ready to match alignment?
           </h4>
           <p className="text-xs text-slate-400 mt-1">
-            Ensure both an active resume is uploaded and job description text is provided.
+            Ensure both a resume is uploaded and job description text is provided.
           </p>
         </div>
         
         <button
           onClick={handleAnalyze}
-          disabled={analyzeLoading || !resumeFilename || !jobDescription.trim()}
+          disabled={analyzeLoading || !jdResumeFilename || !jobDescription.trim()}
           className={`px-8 py-3.5 rounded-2xl font-bold cursor-pointer shadow-lg transition flex items-center gap-2.5 ${
-            resumeFilename && jobDescription.trim()
+            jdResumeFilename && jobDescription.trim()
               ? "bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white shadow-purple-900/10"
               : "bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 border border-slate-300 dark:border-slate-750 cursor-not-allowed"
           }`}
@@ -753,7 +735,7 @@ function JDAnalyzer({
                     <span className="text-xs text-slate-400 uppercase tracking-widest font-black block">Added Keywords & Key terms</span>
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {optimizedData.added_keywords?.map((kw, idx) => (
-                        <span key={idx} className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold">
+                        <span key={idx} className="bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-750 text-slate-700 dark:text-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold">
                           {kw}
                         </span>
                       ))}
@@ -832,7 +814,7 @@ function JDAnalyzer({
               {/* Export Panel toolbar options */}
               <div className="p-6 rounded-3xl border border-slate-200 dark:border-slate-850 bg-slate-100/50 dark:bg-slate-900/30 flex flex-wrap justify-between items-center gap-4 shadow-md">
                 <div className="space-y-0.5">
-                  <h4 className="font-bold text-slate-800 dark:text-white text-sm">💾 Export tailordered document</h4>
+                  <h4 className="font-bold text-slate-800 dark:text-white text-sm">💾 Export tailored document</h4>
                   <p className="text-[10px] text-slate-400">Save optimized formats to apply to job platforms.</p>
                 </div>
                 

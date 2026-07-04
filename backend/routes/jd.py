@@ -18,6 +18,7 @@ router = APIRouter()
 
 class JDRequest(BaseModel):
     job_description: str
+    resume_text: str = None
 
 
 class JDAIRequest(BaseModel):
@@ -143,10 +144,12 @@ async def extract_text(file: UploadFile = File(...)):
 @router.post("/analyze-resume-jd")
 async def analyze_resume_jd(request: JDRequest):
     """Performs a deep comparison of the uploaded resume and job description using detailed metrics."""
-    if not vector_store.chunks:
-        raise HTTPException(status_code=400, detail="Please upload a resume first.")
-
-    resume_text = vector_store.get_full_text()
+    resume_text = request.resume_text
+    if not resume_text or not resume_text.strip():
+        if not vector_store.chunks:
+            raise HTTPException(status_code=400, detail="Please upload a resume first.")
+        resume_text = vector_store.get_full_text()
+    
     jd_text = request.job_description
 
     prompt = f"""
@@ -244,10 +247,12 @@ async def analyze_resume_jd(request: JDRequest):
 @router.post("/optimize-resume")
 async def optimize_resume(request: JDRequest):
     """Rewrites the active resume to match the job description using advanced AI wording and keywords without changing facts."""
-    if not vector_store.chunks:
-        raise HTTPException(status_code=400, detail="Please upload a resume first.")
-
-    resume_text = vector_store.get_full_text()
+    resume_text = request.resume_text
+    if not resume_text or not resume_text.strip():
+        if not vector_store.chunks:
+            raise HTTPException(status_code=400, detail="Please upload a resume first.")
+        resume_text = vector_store.get_full_text()
+    
     jd_text = request.job_description
 
     prompt = f"""
