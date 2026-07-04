@@ -18,6 +18,7 @@ function App() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "dark";
     setTheme(savedTheme);
+    document.documentElement.className = savedTheme;
     document.body.className = savedTheme;
   }, []);
 
@@ -103,6 +104,7 @@ function App() {
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     localStorage.setItem("theme", nextTheme);
+    document.documentElement.className = nextTheme;
     document.body.className = nextTheme;
   };
 

@@ -97,86 +97,106 @@ function Signup({ setPage }) {
   };
 
   return (
-    <div className="relative min-h-[calc(100vh-73px)] flex justify-center items-center bg-slate-950 text-white px-4 py-12">
+    <div className="relative min-h-[calc(100vh-73px)] flex justify-center items-center bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white px-4 py-12 transition-colors duration-300">
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 md:w-[450px] h-80 md:h-[450px] rounded-full bg-purple-600/10 blur-[100px] animate-pulse" />
         <div className="absolute top-1/3 left-1/3 w-64 h-64 rounded-full bg-cyan-500/5 blur-[80px]" />
       </div>
 
-      <div className="relative z-10 w-full max-w-md bg-slate-900/60 backdrop-blur-xl p-8 md:p-10 rounded-3xl shadow-2xl border border-slate-800/80">
+      <div className="relative z-10 w-full max-w-md bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl p-8 md:p-10 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800/80">
         <button
           onClick={() => setPage("landing")}
-          className="flex items-center gap-2 text-slate-400 hover:text-white transition duration-300 text-sm font-medium mb-6"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition duration-300 text-sm font-medium mb-6"
         >
           <FaArrowLeft size={12} />
           Back to Home
         </button>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             Create{" "}
             <span className="bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent">
               Account
             </span>
           </h1>
-          <p className="text-slate-400 text-sm mt-2">
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">
             Sign up to get customized recommendations for your career.
           </p>
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            disabled={loading}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
-          />
+          <div className="relative">
+            <span className="absolute left-3.5 top-3.5 text-slate-450">
+              <FaUser />
+            </span>
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              disabled={loading}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 pl-10 rounded-xl bg-slate-50 dark:bg-slate-950/60 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
           {errors.name && (
-            <p className="text-red-400 text-xs">{errors.name}</p>
+            <p className="text-red-500 dark:text-red-400 text-xs">{errors.name}</p>
           )}
 
-          <input
-            type="email"
-            placeholder="Email Address"
-            value={email}
-            disabled={loading}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
-          />
+          <div className="relative">
+            <span className="absolute left-3.5 top-3.5 text-slate-450">
+              <FaEnvelope />
+            </span>
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              disabled={loading}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 pl-10 rounded-xl bg-slate-50 dark:bg-slate-950/60 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
           {errors.email && (
-            <p className="text-red-400 text-xs">{errors.email}</p>
+            <p className="text-red-500 dark:text-red-400 text-xs">{errors.email}</p>
           )}
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            disabled={loading}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
-          />
+          <div className="relative">
+            <span className="absolute left-3.5 top-3.5 text-slate-450">
+              <FaLock />
+            </span>
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              disabled={loading}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 pl-10 rounded-xl bg-slate-50 dark:bg-slate-950/60 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
           {errors.password && (
-            <p className="text-red-400 text-xs">{errors.password}</p>
+            <p className="text-red-500 dark:text-red-400 text-xs">{errors.password}</p>
           )}
 
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            disabled={loading}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950/60 text-white border border-slate-800 focus:border-purple-500 focus:outline-none"
-          />
+          <div className="relative">
+            <span className="absolute left-3.5 top-3.5 text-slate-450">
+              <FaLock />
+            </span>
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              disabled={loading}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-3 pl-10 rounded-xl bg-slate-50 dark:bg-slate-950/60 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
           {errors.confirmPassword && (
-            <p className="text-red-400 text-xs">{errors.confirmPassword}</p>
+            <p className="text-red-500 dark:text-red-400 text-xs">{errors.confirmPassword}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white py-3.5 rounded-xl font-bold transition duration-300"
+            className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-500 hover:to-cyan-400 text-white py-3.5 rounded-xl font-bold transition duration-300 cursor-pointer"
           >
             {loading ? (
               <>
@@ -192,11 +212,11 @@ function Signup({ setPage }) {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-800 text-center text-sm text-slate-400">
+        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
           Already have an account?{" "}
           <button
             onClick={() => setPage("login")}
-            className="text-purple-400 hover:text-purple-300 font-bold inline-flex items-center gap-1"
+            className="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300 font-bold inline-flex items-center gap-1 cursor-pointer"
           >
             <FaSignInAlt size={13} />
             Sign In Here
