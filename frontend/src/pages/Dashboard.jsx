@@ -512,95 +512,31 @@ function Dashboard({ user, onLogout }) {
         )}
 
         {activeTab === "jd" && (
-          <div className="space-y-8">
-            <JDAnalyzer
-              setMatchScore={setMatchScore}
-              setMatchedSkills={setMatchedSkills}
-              setJDMissingSkills={setJDMissingSkills}
-              onPerformJDAiMatch={handlePerformJDAiMatch}
-              loading={jdAiLoading}
-            />
-
-            {matchScore > 0 && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="md:col-span-1">
-                    <JDScoreCard matchScore={matchScore} />
-                  </div>
-
-                  <div className="md:col-span-2 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl">
-                    <h4 className="font-bold text-slate-800 dark:text-white text-lg mb-4">Keyword Gap Analysis</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {keywordGaps.map((gap, index) => (
-                        <span
-                          key={index}
-                          className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 text-red-700 dark:text-red-400 px-3.5 py-1.5 rounded-xl text-xs font-bold"
-                        >
-                          {gap}
-                        </span>
-                      ))}
-                      {keywordGaps.length === 0 && (
-                        <span className="text-slate-400 text-sm">No critical gaps calculated.</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl">
-                    <h2 className="text-xl font-bold mb-5 text-green-650 dark:text-green-400 flex items-center gap-2">
-                      ✅ Matched Competencies
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {matchedSkills.length > 0 ? (
-                        matchedSkills.map((skill, index) => (
-                          <span
-                            key={index}
-                            className="bg-slate-50 dark:bg-slate-800/80 border border-slate-150 dark:border-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-1.5 rounded-xl text-xs font-bold"
-                          >
-                            {skill}
-                          </span>
-                        ))
-                      ) : (
-                        <div className="text-slate-400 text-sm">No matched skills parsed.</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 shadow-xl">
-                    <h2 className="text-xl font-bold mb-5 text-red-650 dark:text-red-400 flex items-center gap-2">
-                      ❌ Missing Competencies
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {jdMissingSkills.length > 0 ? (
-                        jdMissingSkills.map((skill, index) => (
-                          <span
-                            key={index}
-                            className="bg-slate-50 dark:bg-slate-800/80 border border-slate-150 dark:border-slate-750 text-slate-700 dark:text-slate-200 px-3.5 py-1.5 rounded-xl text-xs font-bold"
-                          >
-                            {skill}
-                          </span>
-                        ))
-                      ) : (
-                        <div className="text-slate-400 text-sm">No missing skills parsed.</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {jdSuggestions.length > 0 && (
-                  <div className="bg-indigo-50/50 dark:bg-indigo-950/10 border border-indigo-150 dark:border-indigo-900/30 rounded-3xl p-8 shadow-xl">
-                    <h4 className="font-bold text-indigo-750 dark:text-indigo-400 text-lg mb-4">💡 Tailoring Recommendations</h4>
-                    <ul className="space-y-2.5 text-slate-650 dark:text-slate-350 text-sm list-decimal pl-4">
-                      {jdSuggestions.map((sug, idx) => (
-                        <li key={idx} className="leading-relaxed">{sug}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <JDAnalyzer
+            user={user}
+            resumeFilename={filename}
+            setResumeFilename={setFilename}
+            pdfUrl={pdfUrl}
+            setPdfUrl={setPdfUrl}
+            matchScore={matchScore}
+            setMatchScore={setMatchScore}
+            matchedSkills={matchedSkills}
+            setMatchedSkills={setMatchedSkills}
+            jdMissingSkills={jdMissingSkills}
+            setJDMissingSkills={setJDMissingSkills}
+            keywordGaps={keywordGaps}
+            setKeywordGaps={setKeywordGaps}
+            jdSuggestions={jdSuggestions}
+            setJdSuggestions={setJdSuggestions}
+            setAtsScore={setAtsScore}
+            setSkills={setSkills}
+            setMissingSkills={setMissingSkills}
+            setProjectsCount={setProjectsCount}
+            setSkillsCount={setSkillsCount}
+            setEducation={setEducation}
+            setCertificationsCount={setCertificationsCount}
+            setExperience={setExperience}
+          />
         )}
 
         {activeTab === "assistant" && (
