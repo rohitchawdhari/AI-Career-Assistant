@@ -11,7 +11,8 @@ from services.email_service import (
     send_welcome_email,
     send_admin_registration_alert,
     send_login_email,
-    send_admin_login_alert
+    send_admin_login_alert,
+    send_otp_email
 )
 
 router = APIRouter()
@@ -232,7 +233,7 @@ def change_password(data: PasswordChangeRequest, authorization: str = Header(Non
 
 
 @router.post("/forgot-password")
-def forgot_password(data: ForgotPasswordRequest):
+def forgot_password(data: ForgotPasswordRequest, background_tasks: BackgroundTasks):
     email = data.email.strip().lower()
     existing_user = users.find_one({"email": email})
     if not existing_user:
@@ -253,6 +254,12 @@ def forgot_password(data: ForgotPasswordRequest):
     print("=========================================")
     print(f"PASSWORD RESET OTP FOR {email}: {otp}")
     print("=========================================")
+
+    # Send OTP email
+    try:
+        background_tasks.add_task(send_otp_email, email, otp)
+    except Exception as e:
+        print(f"FAILED TO QUEUE OTP EMAIL: {e}")
 
     # Return OTP in response (for developer mock/testing purposes)
     return {

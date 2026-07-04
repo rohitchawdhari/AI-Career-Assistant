@@ -136,3 +136,32 @@ AI Career Assistant
 
     fm = FastMail(conf)
     await fm.send_message(message)
+
+
+async def send_otp_email(
+    email: str,
+    otp: str
+):
+    message = MessageSchema(
+        subject="Password Reset Verification OTP - AI Career Assistant 🔑",
+        recipients=[email],
+        body=f"""
+Hello,
+
+You have requested to reset your password on AI Career Assistant.
+
+Your 6-digit Verification Code (OTP) is:
+👉 {otp} 👈
+
+This code is valid for 5 minutes. Do not share this OTP with anyone.
+
+If you did not request a password reset, please ignore this email.
+
+Regards,
+AI Career Assistant Team
+""",
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
