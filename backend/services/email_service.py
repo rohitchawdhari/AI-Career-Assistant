@@ -6,11 +6,15 @@ import traceback
 
 load_dotenv()
 
-# Print configs on load to verify variables exist (omitting secrets)
+# Determine port and corresponding SSL/TLS flags dynamically
+port = int(os.getenv("MAIL_PORT") or 587)
+use_ssl = (port == 465)
+use_tls = (port != 465)  # STARTTLS for port 587
+
 print("Loading Email connection config...")
 print(f"MAIL_USERNAME: {os.getenv('MAIL_USERNAME')}")
 print(f"MAIL_SERVER: {os.getenv('MAIL_SERVER')}")
-print(f"MAIL_PORT: {os.getenv('MAIL_PORT')}")
+print(f"MAIL_PORT: {port} (use_ssl: {use_ssl}, use_tls: {use_tls})")
 print(f"MAIL_FROM: {os.getenv('MAIL_FROM')}")
 print(f"MAIL_PASSWORD length: {len(os.getenv('MAIL_PASSWORD') or '')}")
 
@@ -19,17 +23,16 @@ try:
         MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
         MAIL_PASSWORD=os.getenv("MAIL_PASSWORD"),
         MAIL_FROM=os.getenv("MAIL_FROM"),
-        MAIL_PORT=int(os.getenv("MAIL_PORT") or 587),
+        MAIL_PORT=port,
         MAIL_SERVER=os.getenv("MAIL_SERVER"),
-        MAIL_STARTTLS=True,
-        MAIL_SSL_TLS=False,
+        MAIL_STARTTLS=use_tls,
+        MAIL_SSL_TLS=use_ssl,
         USE_CREDENTIALS=True
     )
 except Exception as e:
     print("CRITICAL: Failed to initialize ConnectionConfig for FastMail!")
     traceback.print_exc()
 
-# Admin email is configured in environment (fallback to MAIL_USERNAME if MAIL_FROM not set)
 ADMIN_EMAIL = os.getenv("MAIL_FROM") or os.getenv("MAIL_USERNAME") or "rohitchawdhari48@gmail.com"
 
 

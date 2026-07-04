@@ -88,17 +88,21 @@ def test_smtp_live():
             raise ValueError("One or more SMTP environment variables are missing.")
 
         port = int(port_str)
-        steps.append("Connecting to SMTP server...")
-        server = smtplib.SMTP(server_host, port, timeout=10) # 10 second timeout
+        steps.append(f"Connecting to SMTP server on port {port}...")
+        if port == 465:
+            server = smtplib.SMTP_SSL(server_host, port, timeout=10)
+        else:
+            server = smtplib.SMTP(server_host, port, timeout=10)
         
         steps.append("Sending EHLO...")
         server.ehlo()
         
-        steps.append("Starting TLS...")
-        server.starttls()
-        
-        steps.append("Sending EHLO after TLS...")
-        server.ehlo()
+        if port != 465:
+            steps.append("Starting TLS...")
+            server.starttls()
+            
+            steps.append("Sending EHLO after TLS...")
+            server.ehlo()
         
         steps.append("Logging in...")
         server.login(username, password)
