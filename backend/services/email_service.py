@@ -165,3 +165,49 @@ AI Career Assistant Team
 
     fm = FastMail(conf)
     await fm.send_message(message)
+
+
+async def send_logout_email(
+    email: str
+):
+    message = MessageSchema(
+        subject="Logout Successful - AI Career Assistant",
+        recipients=[email],
+        body=f"""
+Hello,
+
+You have successfully logged out of AI Career Assistant.
+
+If you did not initiate this logout, please secure your account by logging in and changing your password.
+
+Regards,
+AI Career Assistant Team
+""",
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)
+
+
+async def send_password_changed_email(
+    email: str
+):
+    message = MessageSchema(
+        subject="Password Changed Successfully - AI Career Assistant 🔒",
+        recipients=[email],
+        body=f"""
+Hello,
+
+Your password for AI Career Assistant has been changed successfully.
+
+If you did not make this change, please contact support or reset your password immediately using the forgot password option.
+
+Regards,
+AI Career Assistant Team
+""",
+        subtype="plain"
+    )
+
+    fm = FastMail(conf)
+    await fm.send_message(message)

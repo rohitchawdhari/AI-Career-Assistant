@@ -12,7 +12,9 @@ from services.email_service import (
     send_admin_registration_alert,
     send_login_email,
     send_admin_login_alert,
-    send_otp_email
+    send_otp_email,
+    send_logout_email,
+    send_password_changed_email
 )
 
 router = APIRouter()
@@ -55,6 +57,10 @@ class VerifyOTPRequest(BaseModel):
     email: str
     otp: str
     new_password: str
+
+
+class LogoutRequest(BaseModel):
+    email: str
 
 
 @router.post("/signup")
@@ -203,7 +209,7 @@ def login(user: UserLogin, background_tasks: BackgroundTasks):
 
 
 @router.post("/change-password")
-def change_password(data: PasswordChangeRequest, authorization: str = Header(None)):
+def change_password(data: PasswordChangeRequest, background_tasks: BackgroundTasks, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized session")
     token = authorization.split(" ")[1]
@@ -228,6 +234,11 @@ def change_password(data: PasswordChangeRequest, authorization: str = Header(Non
     # Hash and update new password
     hashed_password = pwd_context.hash(data.new_password)
     users.update_one({"email": email}, {"$set": {"password": hashed_password}})
+
+    try:
+        background_tasks.add_task(send_password_changed_email, email)
+    except Exception as e:
+        print(f"FAILED TO QUEUE PASSWORD CHANGED EMAIL: {e}")
 
     return {"message": "Password changed successfully"}
 
@@ -269,7 +280,7 @@ def forgot_password(data: ForgotPasswordRequest, background_tasks: BackgroundTas
 
 
 @router.post("/verify-otp")
-def verify_otp(data: VerifyOTPRequest):
+def verify_otp(data: VerifyOTPRequest, background_tasks: BackgroundTasks):
     email = data.email.strip().lower()
     otp = data.otp.strip()
     record = otp_store.find_one({"email": email})
@@ -293,4 +304,20 @@ def verify_otp(data: VerifyOTPRequest):
     # Remove verified OTP
     otp_store.delete_one({"email": email})
 
-    return {"message": "Password has been reset successfully"}
+    try:
+        background_tasks.add_task(send_password_changed_email, email)
+    except Exception as e:
+        print(f"FAILED TO QUEUE PASSWORD CHANGED EMAIL: {e}")
+
+    return {"message": "Password reset successfully"}
+
+
+@router.post("/logout")
+def logout(data: LogoutRequest, background_tasks: BackgroundTasks):
+    email = data.email.strip().lower()
+    try:
+        background_tasks.add_task(send_logout_email, email)
+    except Exception as e:
+        print(f"FAILED TO QUEUE LOGOUT EMAIL: {e}")
+
+    return {"message": "Logged out successfully"}

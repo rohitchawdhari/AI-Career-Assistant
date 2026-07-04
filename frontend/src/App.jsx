@@ -93,7 +93,14 @@ function App() {
     return () => clearTimeout(timer);
   }, [token, user]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (user?.email) {
+      try {
+        await API.post("/logout", { email: user.email });
+      } catch (err) {
+        console.error("Logout notification failed:", err);
+      }
+    }
     setToken(null);
     setUser(null);
     delete API.defaults.headers.common["Authorization"];
