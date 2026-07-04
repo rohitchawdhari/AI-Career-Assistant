@@ -67,3 +67,63 @@ def home():
     return {
         "message": "AI Career Assistant Backend Running"
     }
+
+
+@app.get("/test-smtp-live")
+def test_smtp_live():
+    import smtplib
+    from email.mime.text import MIMEText
+    import os
+    import traceback
+
+    username = os.getenv("MAIL_USERNAME")
+    password = os.getenv("MAIL_PASSWORD")
+    server_host = os.getenv("MAIL_SERVER")
+    port_str = os.getenv("MAIL_PORT")
+    
+    steps = []
+    try:
+        steps.append(f"Loaded config - Server: {server_host}, Port: {port_str}, Username: {username}")
+        if not username or not password or not server_host or not port_str:
+            raise ValueError("One or more SMTP environment variables are missing.")
+
+        port = int(port_str)
+        steps.append("Connecting to SMTP server...")
+        server = smtplib.SMTP(server_host, port, timeout=10) # 10 second timeout
+        
+        steps.append("Sending EHLO...")
+        server.ehlo()
+        
+        steps.append("Starting TLS...")
+        server.starttls()
+        
+        steps.append("Sending EHLO after TLS...")
+        server.ehlo()
+        
+        steps.append("Logging in...")
+        server.login(username, password)
+        
+        steps.append("Sending test email to yourself...")
+        msg = MIMEText("This is a live diagnostics check of SMTP on Render.")
+        msg['Subject'] = 'Render Live SMTP Diagnostics'
+        msg['From'] = username
+        msg['To'] = username
+        server.sendmail(username, [username], msg.as_string())
+        
+        steps.append("Closing connection...")
+        server.quit()
+        
+        return {
+            "status": "success",
+            "message": "SMTP Connection and sending succeeded completely!",
+            "steps": steps
+        }
+    except Exception as e:
+        tb = traceback.format_exc()
+        return {
+            "status": "failed",
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+            "traceback": tb,
+            "steps": steps
+        }
