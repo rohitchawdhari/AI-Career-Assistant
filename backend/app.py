@@ -84,10 +84,30 @@ async def test_smtp_live(email: str = None):
     
     brevo_key = os.getenv("BREVO_API_KEY")
     resend_key = os.getenv("RESEND_API_KEY")
+    app_script_url = os.getenv("GMAIL_APP_SCRIPT_URL")
     
     target_email = email or username or "rohitchawdhari48@gmail.com"
     steps = []
     
+    # 0. Test Google Apps Script if defined
+    if app_script_url:
+        steps.append("Testing Google Apps Script HTTPS Relay...")
+        payload = {
+            "to": target_email,
+            "subject": "Google Apps Script Test Check",
+            "body": f"This is a Google Apps Script relay connection test from Render to {target_email}."
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(app_script_url, json=payload, timeout=15)
+                if res.status_code == 200:
+                    steps.append(f"Google Apps Script Success: status {res.status_code}")
+                    return {"status": "success", "message": f"Email sent successfully via Google Apps Script HTTPS Relay to {target_email}!", "steps": steps}
+                else:
+                    steps.append(f"Google Apps Script Failed: status={res.status_code}, response={res.text}")
+        except Exception as e:
+            steps.append(f"Google Apps Script exception: {e}")
+
     # 1. Test Brevo if key is defined
     if brevo_key:
         steps.append("Testing Brevo HTTPS REST API...")

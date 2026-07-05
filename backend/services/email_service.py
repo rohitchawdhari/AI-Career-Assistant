@@ -18,6 +18,7 @@ print(f"MAIL_SERVER: {os.getenv('MAIL_SERVER')}")
 print(f"MAIL_PORT: {port} (use_ssl: {use_ssl}, use_tls: {use_tls})")
 print(f"MAIL_FROM: {os.getenv('MAIL_FROM')}")
 print(f"MAIL_PASSWORD length: {len(os.getenv('MAIL_PASSWORD') or '')}")
+print(f"GMAIL_APP_SCRIPT_URL configured: {bool(os.getenv('GMAIL_APP_SCRIPT_URL'))}")
 
 try:
     conf = ConnectionConfig(
@@ -38,9 +39,33 @@ ADMIN_EMAIL = os.getenv("MAIL_FROM") or os.getenv("MAIL_USERNAME") or "rohitchaw
 
 
 async def _send_message_safe(message: MessageSchema):
-    """Central helper to send emails. Uses Brevo or Resend HTTPS APIs if configured, else falls back to SMTP."""
+    """Central helper to send emails. 
+    1. Tries Google Apps Script HTTPS relay first (bypasses all blocks & Gmail restrictions).
+    2. Tries Brevo/Resend REST APIs if keys exist.
+    3. Falls back to direct SMTP.
+    """
     
-    # 1. Try Brevo API first (best for unrestricted sending)
+    # 0. Try Google Apps Script URL first (recommended for sending from personal Gmail)
+    app_script_url = os.getenv("GMAIL_APP_SCRIPT_URL")
+    if app_script_url:
+        print("Attempting to send email via Google Apps Script HTTPS Relay...")
+        payload = {
+            "to": ", ".join(message.recipients),
+            "subject": message.subject,
+            "body": message.body
+        }
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.post(app_script_url, json=payload, timeout=15)
+                if res.status_code == 200:
+                    print(f"Google Apps Script Success: Email sent to {message.recipients}")
+                    return
+                else:
+                    print(f"Google Apps Script Failure: status={res.status_code}, response={res.text}")
+        except Exception as e:
+            print(f"Google Apps Script Exception: {e}")
+
+    # 1. Try Brevo API
     brevo_key = os.getenv("BREVO_API_KEY")
     if brevo_key:
         print("Attempting to send email via Brevo HTTPS API...")
@@ -67,7 +92,7 @@ async def _send_message_safe(message: MessageSchema):
         except Exception as e:
             print(f"Brevo API Exception: {e}")
 
-    # 2. Try Resend API second
+    # 2. Try Resend API
     resend_key = os.getenv("RESEND_API_KEY")
     if resend_key:
         print("Attempting to send email via Resend HTTPS API...")
@@ -93,8 +118,8 @@ async def _send_message_safe(message: MessageSchema):
         except Exception as e:
             print(f"Resend API Exception: {e}")
 
-    # 3. Fallback to direct SMTP
-    print("No REST Email API keys (BREVO_API_KEY / RESEND_API_KEY) found. Falling back to SMTP connection...")
+    # 3. Fallback to SMTP
+    print("No REST API keys / Script URL found. Falling back to SMTP connection...")
     try:
         fm = FastMail(conf)
         await fm.send_message(message)
