@@ -14,7 +14,8 @@ from services.email_service import (
     send_admin_login_alert,
     send_otp_email,
     send_logout_email,
-    send_password_changed_email
+    send_password_changed_email,
+    send_account_deleted_email
 )
 
 router = APIRouter()
@@ -324,7 +325,7 @@ def logout(data: LogoutRequest, background_tasks: BackgroundTasks):
 
 
 @router.delete("/delete-account")
-def delete_account(authorization: str = Header(None)):
+def delete_account(background_tasks: BackgroundTasks, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized session")
     token = authorization.split(" ")[1]
@@ -343,5 +344,10 @@ def delete_account(authorization: str = Header(None)):
     users.delete_one({"email": email})
     login_history.delete_many({"email": email})
     otp_store.delete_many({"email": email})
+
+    try:
+        background_tasks.add_task(send_account_deleted_email, email)
+    except Exception as e:
+        print(f"FAILED TO QUEUE DELETION EMAIL: {e}")
 
     return {"message": "Account permanently deleted"}

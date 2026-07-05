@@ -281,3 +281,26 @@ AI Career Assistant Team
         subtype="plain"
     )
     await _send_message_safe(message)
+
+
+async def send_account_deleted_email(
+    email: str
+):
+    message = MessageSchema(
+        subject="Account Permanently Deleted - AI Career Assistant 🗑️",
+        recipients=[email],
+        body=f"""
+Hello,
+
+Your account associated with {email} has been permanently deleted from AI Career Assistant.
+
+All your profile details, analysis records, and history have been wiped from our system.
+
+If you did not initiate this deletion, please contact support immediately.
+
+Regards,
+AI Career Assistant Team
+""",
+        subtype="plain"
+    )
+    await _send_message_safe(message)
