@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave } from "react-icons/fa";
+import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave, FaBriefcase } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Overview from "../components/Overview";
 import ATSCard from "../components/ATSCard";
@@ -17,6 +17,10 @@ import GithubAnalyzer from "../components/GithubAnalyzer";
 import LinkedinAnalyzer from "../components/LinkedinAnalyzer";
 import PortfolioAnalyzer from "../components/PortfolioAnalyzer";
 import SalaryPredictor from "../components/SalaryPredictor";
+import AdminDashboard from "../components/AdminDashboard";
+import JobTracker from "../components/JobTracker";
+import AnalyticsDashboard from "../components/AnalyticsDashboard";
+import WeeklyReports from "../components/WeeklyReports";
 import API from "../services/api";
 
 function Dashboard({ user, onLogout }) {
@@ -197,6 +201,9 @@ function Dashboard({ user, onLogout }) {
     { id: "jd", label: "Job Description Matcher", icon: <FaBullseye /> },
     { id: "builder", label: "AI Resume Builder", icon: <FaFileSignature /> },
     { id: "interview", label: "AI Mock Interview", icon: <FaQuestionCircle /> },
+    { id: "tracker", label: "Job Tracker", icon: <FaBriefcase /> },
+    { id: "analytics", label: "Analytics Panel", icon: <FaChartBar /> },
+    { id: "weekly", label: "Weekly AI Report", icon: <FaFileAlt /> },
     { id: "github", label: "GitHub Analyzer", icon: <FaGithub /> },
     { id: "linkedin", label: "LinkedIn Analyzer", icon: <FaLinkedin /> },
     { id: "portfolio", label: "Portfolio Analyzer", icon: <FaGlobe /> },
@@ -207,6 +214,10 @@ function Dashboard({ user, onLogout }) {
     { id: "history", label: "Analysis History", icon: <FaHistory /> },
     { id: "profile", label: "Profile Settings", icon: <FaUserCircle /> },
   ];
+
+  if (user?.role === "admin" || user?.email === "rohitchawdhari48@gmail.com") {
+    menuItems.push({ id: "admin", label: "Admin Panel", icon: <FaTools /> });
+  }
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-white transition-colors duration-300">
@@ -586,6 +597,22 @@ function Dashboard({ user, onLogout }) {
             atsScore={atsScore}
             filename={filename}
           />
+        )}
+
+        {activeTab === "tracker" && (
+          <JobTracker />
+        )}
+
+        {activeTab === "analytics" && (
+          <AnalyticsDashboard />
+        )}
+
+        {activeTab === "weekly" && (
+          <WeeklyReports />
+        )}
+
+        {activeTab === "admin" && (
+          <AdminDashboard />
         )}
       </main>
     </div>

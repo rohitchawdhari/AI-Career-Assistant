@@ -139,7 +139,7 @@ function App() {
         <Login setPage={setPage} setToken={setToken} setUser={setUser} />
       )}
 
-      {page === "signup" && <Signup setPage={setPage} />}
+      {page === "signup" && <Signup setPage={setPage} setToken={setToken} setUser={setUser} />}
 
       {page === "dashboard" && <Dashboard user={user} onLogout={handleLogout} />}
 

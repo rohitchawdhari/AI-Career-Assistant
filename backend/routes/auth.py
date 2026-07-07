@@ -121,6 +121,12 @@ def login(user: UserLogin, background_tasks: BackgroundTasks):
             detail="Invalid email or password"
         )
 
+    if existing_user.get("is_blocked"):
+        raise HTTPException(
+            status_code=403,
+            detail="Your account has been temporarily blocked by the Administrator."
+        )
+
     if "password" not in existing_user:
         raise HTTPException(
             status_code=500,
@@ -205,7 +211,8 @@ def login(user: UserLogin, background_tasks: BackgroundTasks):
         "expires_at": int(expires_at.timestamp()),
         "created_at": created_at,
         "last_login": last_login_time,
-        "login_history": history_list
+        "login_history": history_list,
+        "role": existing_user.get("role", "user")
     }
 
 
@@ -351,3 +358,96 @@ def delete_account(background_tasks: BackgroundTasks, authorization: str = Heade
         print(f"FAILED TO QUEUE DELETION EMAIL: {e}")
 
     return {"message": "Account permanently deleted"}
+
+
+class GoogleLoginRequest(BaseModel):
+    email: str
+    name: Optional[str] = ""
+    google_id: Optional[str] = ""
+    picture: Optional[str] = ""
+
+
+@router.post("/google-login")
+def google_login(data: GoogleLoginRequest, background_tasks: BackgroundTasks):
+    email = data.email.strip().lower()
+    existing_user = users.find_one({"email": email})
+    
+    if existing_user:
+        if existing_user.get("is_blocked"):
+            raise HTTPException(
+                status_code=403,
+                detail="Your account has been temporarily blocked by the Administrator."
+            )
+        users.update_one(
+            {"email": email},
+            {"$set": {
+                "google_id": data.google_id,
+                "profile_picture": data.picture
+            }}
+        )
+        user_name = existing_user["name"]
+        created_at = existing_user.get("created_at") or datetime.datetime.utcnow().isoformat()
+    else:
+        user_name = data.name.strip() if data.name else email.split("@")[0]
+        hashed_password = pwd_context.hash(str(random.randint(10000000, 99999999)))
+        created_at = datetime.datetime.utcnow().isoformat()
+        
+        users.insert_one({
+            "name": user_name,
+            "email": email,
+            "password": hashed_password,
+            "google_id": data.google_id,
+            "profile_picture": data.picture,
+            "role": "user",
+            "created_at": created_at
+        })
+        
+        registration_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        try:
+            background_tasks.add_task(send_welcome_email, email, user_name, registration_time)
+            background_tasks.add_task(send_admin_registration_alert, user_name, email, registration_time)
+        except Exception as e:
+            print(f"FAILED TO QUEUE GOOGLE SIGNUP EMAILS: {e}")
+
+    expire_delta = datetime.timedelta(hours=1)
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + expire_delta
+    
+    token = jwt.encode(
+        {
+            "email": email,
+            "name": user_name,
+            "exp": expires_at
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+    login_entry = {
+        "email": email,
+        "timestamp": int(time.time()),
+        "ip_address": "127.0.0.1",
+        "user_agent": "Google OAuth Auth Flow"
+    }
+    login_history.insert_one(login_entry)
+    
+    last_login_record = list(login_history.find({"email": email}).sort("timestamp", -1).skip(1).limit(1))
+    last_login_time = last_login_record[0]["timestamp"] if last_login_record else int(time.time())
+
+    login_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    try:
+        background_tasks.add_task(send_login_email, email, user_name, login_time)
+        background_tasks.add_task(send_admin_login_alert, user_name, email, login_time)
+    except Exception as e:
+        print(f"FAILED TO QUEUE GOOGLE LOGIN EMAILS: {e}")
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "name": user_name,
+        "email": email,
+        "expires_at": int(expires_at.timestamp()),
+        "created_at": created_at,
+        "last_login": last_login_time,
+        "role": existing_user.get("role", "user") if existing_user else "user",
+        "profile_picture": data.picture
+    }
