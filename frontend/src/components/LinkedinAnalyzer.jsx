@@ -178,4 +178,4 @@ const styleInject = (
   `}</style>
 );
 
-export default LinkedInAnalyzer;
+export default LinkedinAnalyzer;
