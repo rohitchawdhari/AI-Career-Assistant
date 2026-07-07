@@ -7,6 +7,7 @@ from routes.chat import router as chat_router
 from routes.jd import router as jd_router
 from routes.assistant import router as assistant_router
 from routes.auth import router as auth_router
+from routes.tools import router as tools_router
 
 import os
 
@@ -58,6 +59,10 @@ app.include_router(
 
 app.include_router(
     auth_router
+)
+
+app.include_router(
+    tools_router
 )
 
 

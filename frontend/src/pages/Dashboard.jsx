@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt } from "react-icons/fa";
+import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Overview from "../components/Overview";
 import ATSCard from "../components/ATSCard";
@@ -11,6 +11,12 @@ import ResumeAIAssistant from "../components/ResumeAIAssistant";
 import AICareerTools from "../components/AICareerTools";
 import HistoryList from "../components/HistoryList";
 import UserProfile from "../components/UserProfile";
+import ResumeBuilder from "../components/ResumeBuilder";
+import MockInterview from "../components/MockInterview";
+import GithubAnalyzer from "../components/GithubAnalyzer";
+import LinkedinAnalyzer from "../components/LinkedinAnalyzer";
+import PortfolioAnalyzer from "../components/PortfolioAnalyzer";
+import SalaryPredictor from "../components/SalaryPredictor";
 import API from "../services/api";
 
 function Dashboard({ user, onLogout }) {
@@ -189,6 +195,12 @@ function Dashboard({ user, onLogout }) {
     { id: "overview", label: "Overview", icon: <FaHome /> },
     { id: "ats", label: "ATS Analyzer", icon: <FaChartBar /> },
     { id: "jd", label: "Job Description Matcher", icon: <FaBullseye /> },
+    { id: "builder", label: "AI Resume Builder", icon: <FaFileSignature /> },
+    { id: "interview", label: "AI Mock Interview", icon: <FaQuestionCircle /> },
+    { id: "github", label: "GitHub Analyzer", icon: <FaGithub /> },
+    { id: "linkedin", label: "LinkedIn Analyzer", icon: <FaLinkedin /> },
+    { id: "portfolio", label: "Portfolio Analyzer", icon: <FaGlobe /> },
+    { id: "salary", label: "Salary Predictor", icon: <FaMoneyBillWave /> },
     { id: "assistant", label: "Resume AI Assistant", icon: <FaMagic /> },
     { id: "chat", label: "AI Career Coach", icon: <FaComments /> },
     { id: "tools", label: "AI Career Tools", icon: <FaWrench /> },
@@ -525,6 +537,30 @@ function Dashboard({ user, onLogout }) {
             jdSuggestions={jdSuggestions}
             setJdSuggestions={setJdSuggestions}
           />
+        )}
+
+        {activeTab === "builder" && (
+          <ResumeBuilder user={user} />
+        )}
+
+        {activeTab === "interview" && (
+          <MockInterview user={user} />
+        )}
+
+        {activeTab === "github" && (
+          <GithubAnalyzer />
+        )}
+
+        {activeTab === "linkedin" && (
+          <LinkedinAnalyzer />
+        )}
+
+        {activeTab === "portfolio" && (
+          <PortfolioAnalyzer />
+        )}
+
+        {activeTab === "salary" && (
+          <SalaryPredictor />
         )}
 
         {activeTab === "assistant" && (
