@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave, FaBriefcase } from "react-icons/fa";
+import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave, FaBriefcase, FaSearch, FaGraduationCap, FaCertificate, FaFolderOpen, FaPenNib, FaCheckCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Overview from "../components/Overview";
 import ATSCard from "../components/ATSCard";
@@ -21,6 +21,12 @@ import AdminDashboard from "../components/AdminDashboard";
 import JobTracker from "../components/JobTracker";
 import AnalyticsDashboard from "../components/AnalyticsDashboard";
 import WeeklyReports from "../components/WeeklyReports";
+import JobSearch from "../components/JobSearch";
+import LearningHub from "../components/LearningHub";
+import CertificateManager from "../components/CertificateManager";
+import PortfolioGenerator from "../components/PortfolioGenerator";
+import CreativeStudio from "../components/CreativeStudio";
+import CareerScorecard from "../components/CareerScorecard";
 import API from "../services/api";
 
 function Dashboard({ user, onLogout }) {
@@ -201,6 +207,12 @@ function Dashboard({ user, onLogout }) {
     { id: "jd", label: "Job Description Matcher", icon: <FaBullseye /> },
     { id: "builder", label: "AI Resume Builder", icon: <FaFileSignature /> },
     { id: "interview", label: "AI Mock Interview", icon: <FaQuestionCircle /> },
+    { id: "jobsearch", label: "AI Job Search", icon: <FaSearch /> },
+    { id: "learning", label: "AI Learning Hub", icon: <FaGraduationCap /> },
+    { id: "certificates", label: "Certificate Manager", icon: <FaCertificate /> },
+    { id: "portfoliogen", label: "Portfolio Generator", icon: <FaFolderOpen /> },
+    { id: "creativestudio", label: "Creative Writer Studio", icon: <FaPenNib /> },
+    { id: "careerscore", label: "Career Score & Badges", icon: <FaTrophy /> },
     { id: "tracker", label: "Job Tracker", icon: <FaBriefcase /> },
     { id: "analytics", label: "Analytics Panel", icon: <FaChartBar /> },
     { id: "weekly", label: "Weekly AI Report", icon: <FaFileAlt /> },
@@ -613,6 +625,30 @@ function Dashboard({ user, onLogout }) {
 
         {activeTab === "admin" && (
           <AdminDashboard />
+        )}
+
+        {activeTab === "jobsearch" && (
+          <JobSearch />
+        )}
+
+        {activeTab === "learning" && (
+          <LearningHub />
+        )}
+
+        {activeTab === "certificates" && (
+          <CertificateManager />
+        )}
+
+        {activeTab === "portfoliogen" && (
+          <PortfolioGenerator />
+        )}
+
+        {activeTab === "creativestudio" && (
+          <CreativeStudio />
+        )}
+
+        {activeTab === "careerscore" && (
+          <CareerScorecard />
         )}
       </main>
     </div>
