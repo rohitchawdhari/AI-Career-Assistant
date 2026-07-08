@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header, BackgroundTasks
 from pydantic import BaseModel
+from typing import Optional
 from passlib.context import CryptContext
 from jose import jwt
 import datetime
