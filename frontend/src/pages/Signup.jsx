@@ -97,9 +97,9 @@ function Signup({ setPage, setToken, setUser }) {
   };
 
   const handleGoogleSignIn = async () => {
-    const gEmail = prompt("Enter Google account email to register/sign in:", email || "rohitchawdhari48@gmail.com");
+    const gEmail = prompt("Enter Google account email to register/sign in:", "");
     if (!gEmail) return;
-    const gName = prompt("Enter display name:", name || "Rohit Chawdhari");
+    const gName = prompt("Enter display name:", "");
     if (!gName) return;
 
     try {

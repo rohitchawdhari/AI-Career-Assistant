@@ -18,18 +18,38 @@ function UploadCard({
   const [loading, setLoading] =
     useState(false);
 
-  const [fileName, setFileName] =
-    useState("");
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await processFile(e.dataTransfer.files[0]);
+    }
+  };
 
   const uploadResume = async (e) => {
     const file = e.target.files[0];
+    if (file) {
+      await processFile(file);
+    }
+  };
 
-    if (!file) return;
-
+  const processFile = async (file) => {
     setFileName(file.name);
 
     const formData = new FormData();
-
     formData.append("file", file);
 
     try {
@@ -92,11 +112,9 @@ function UploadCard({
 
     } catch (err) {
       console.log(err);
-
       toast.error(
         "Failed to upload resume"
       );
-
     } finally {
       setLoading(false);
     }
@@ -115,7 +133,11 @@ function UploadCard({
       </p>
 
       <label
-        className="
+        onDragEnter={handleDrag}
+        onDragOver={handleDrag}
+        onDragLeave={handleDrag}
+        onDrop={handleDrop}
+        className={`
         group
         flex
         flex-col
@@ -125,15 +147,14 @@ function UploadCard({
         h-56
         border-2
         border-dashed
-        border-purple-500
         rounded-2xl
         cursor-pointer
         bg-slate-800/30
         hover:bg-slate-800/60
-        hover:border-cyan-400
         transition-all
         duration-300
-        "
+        ${dragActive ? 'border-cyan-400 bg-slate-800/80 scale-102' : 'border-purple-500 hover:border-cyan-400'}
+        `}
       >
         <div className="text-center">
 
@@ -142,7 +163,7 @@ function UploadCard({
           </div>
 
           <p className="font-semibold text-lg">
-            Click to Upload Resume
+            {dragActive ? "Drop your resume here!" : "Click or Drag & Drop Resume"}
           </p>
 
           <p className="text-sm text-slate-400 mt-2">

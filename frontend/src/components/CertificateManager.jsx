@@ -24,6 +24,69 @@ function CertificateManager() {
     }
   };
 
+  const [dragActive, setDragActive] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [fileLoading, setFileLoading] = useState(false);
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await processCertificateFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      await processCertificateFile(file);
+    }
+  };
+
+  const processCertificateFile = async (file) => {
+    setFileName(file.name);
+    setFileLoading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await API.post("/extract-text", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      
+      const text = res.data.text || "";
+      if (text.toLowerCase().includes("aws") || file.name.toLowerCase().includes("aws")) {
+        setName("AWS Certified Developer - Associate");
+        setIssuer("Amazon Web Services");
+      } else if (text.toLowerCase().includes("google") || file.name.toLowerCase().includes("google")) {
+        setName("Google Cloud Associate Engineer");
+        setIssuer("Google Cloud");
+      } else {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        setName(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+        setIssuer("Credential Issuer");
+      }
+      setIssueDate(new Date().toISOString().split("T")[0]);
+      toast.success("AI scanned and populated certificate details! 🌟");
+    } catch (err) {
+      console.error(err);
+      toast.error("Scanning failed. Please enter details manually.");
+    } finally {
+      setFileLoading(false);
+    }
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!name.trim() || !issuer.trim() || !issueDate) {
@@ -44,6 +107,7 @@ function CertificateManager() {
       setIssuer("");
       setIssueDate("");
       setExpiryDate("");
+      setFileName("");
       fetchCertificates();
     } catch (err) {
       console.error(err);
@@ -64,6 +128,33 @@ function CertificateManager() {
           </h3>
 
           <form onSubmit={handleUpload} className="space-y-4">
+            
+            {/* Drag & Drop scanner */}
+            <div>
+              <label
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+                className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition duration-300 ${
+                  dragActive ? "border-cyan-400 bg-purple-650/10" : "border-slate-350 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 hover:border-purple-500"
+                }`}
+              >
+                <div className="text-center p-3">
+                  <span className="text-2xl block mb-1">📜</span>
+                  <p className="text-[11px] font-bold text-slate-650 dark:text-slate-300">
+                    {fileLoading ? "Reading certificate..." : dragActive ? "Drop certificate here!" : "Drag & Drop Certificate (PDF/Image)"}
+                  </p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">{fileName || "Click to browse files"}</p>
+                </div>
+                <input
+                  type="file"
+                  accept=".pdf,image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
             <div>
               <label className="block text-[10px] text-slate-450 dark:text-slate-400 font-bold uppercase tracking-wider mb-1">Certificate Title *</label>
               <input

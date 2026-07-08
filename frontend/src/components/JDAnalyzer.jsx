@@ -68,11 +68,54 @@ function JDAnalyzer({
     return html;
   };
 
+  const [resumeDragActive, setResumeDragActive] = useState(false);
+  const [jdDragActive, setJdDragActive] = useState(false);
+
+  const handleResumeDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setResumeDragActive(true);
+    } else if (e.type === "dragleave") {
+      setResumeDragActive(false);
+    }
+  };
+
+  const handleResumeDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResumeDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await processResume(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleJDDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setJdDragActive(true);
+    } else if (e.type === "dragleave") {
+      setJdDragActive(false);
+    }
+  };
+
+  const handleJDDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setJdDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      await processJDFile(e.dataTransfer.files[0]);
+    }
+  };
+
   // Upload/Replace Resume Handler (JD tab specific)
   const handleResumeUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (file) await processResume(file);
+  };
 
+  const processResume = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -96,8 +139,10 @@ function JDAnalyzer({
   // Upload Job Description File
   const handleJDFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (file) await processJDFile(file);
+  };
 
+  const processJDFile = async (file) => {
     setJdFile(file);
     const formData = new FormData();
     formData.append("file", file);
@@ -297,7 +342,15 @@ function JDAnalyzer({
       <div className="grid lg:grid-cols-2 gap-6">
         
         {/* Active Resume Upload Status card */}
-        <div className="bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        <div
+          onDragEnter={handleResumeDrag}
+          onDragOver={handleResumeDrag}
+          onDragLeave={handleResumeDrag}
+          onDrop={handleResumeDrop}
+          className={`bg-white/60 dark:bg-slate-900/40 border rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all duration-300 ${
+            resumeDragActive ? "border-cyan-400 bg-purple-600/5 scale-102" : "border-slate-200 dark:border-slate-800/80"
+          }`}
+        >
           <div>
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-slate-800 dark:text-white">
               <span>📄</span> JD Target Resume
@@ -319,14 +372,16 @@ function JDAnalyzer({
                 </div>
               </div>
             ) : (
-              <div className="p-5 rounded-2xl bg-amber-50/30 dark:bg-amber-950/10 border border-amber-100 dark:border-amber-900/20 flex items-start gap-4">
-                <FaExclamationTriangle className="text-amber-500 text-xl shrink-0 mt-0.5" />
+              <div className={`p-5 rounded-2xl border flex items-start gap-4 transition-all duration-300 ${
+                resumeDragActive ? 'bg-cyan-50/20 border-cyan-300' : 'bg-amber-50/30 dark:bg-amber-950/10 border-amber-100 dark:border-amber-900/20'
+              }`}>
+                <FaExclamationTriangle className={`${resumeDragActive ? 'text-cyan-500' : 'text-amber-500'} text-xl shrink-0 mt-0.5`} />
                 <div>
                   <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                    No Resume Uploaded
+                    {resumeDragActive ? "Drop the resume file!" : "No Resume Uploaded"}
                   </p>
                   <p className="text-xs text-slate-450 mt-1">
-                    Upload your profile in PDF, DOC, or DOCX formats to start the comparisons.
+                    {resumeDragActive ? "Release mouse button to upload." : "Upload your profile in PDF, DOC, or DOCX formats to start the comparisons."}
                   </p>
                 </div>
               </div>
@@ -381,7 +436,15 @@ function JDAnalyzer({
         </div>
 
         {/* 2. Job Description Setup Card */}
-        <div className="bg-white/60 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+        <div
+          onDragEnter={handleJDDrag}
+          onDragOver={handleJDDrag}
+          onDragLeave={handleJDDrag}
+          onDrop={handleJDDrop}
+          className={`bg-white/60 dark:bg-slate-900/40 border rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between transition-all duration-300 ${
+            jdDragActive ? "border-cyan-400 bg-purple-600/5 scale-102" : "border-slate-200 dark:border-slate-800/80"
+          }`}
+        >
           <div>
             <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-slate-800 dark:text-white">
               <span>📋</span> Job Description Details
@@ -428,7 +491,9 @@ function JDAnalyzer({
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 text-sm outline-none focus:border-purple-500/80 focus:ring-1 focus:ring-purple-500/85 text-slate-800 dark:text-white transition"
               />
             ) : (
-              <div className="border border-dashed border-slate-200 dark:border-slate-800/90 rounded-2xl p-6 text-center bg-slate-50 dark:bg-slate-950/20">
+              <div className={`border border-dashed rounded-2xl p-6 text-center transition-all duration-300 ${
+                jdDragActive ? 'bg-cyan-50/20 border-cyan-300' : 'border-slate-200 dark:border-slate-800/90 bg-slate-50 dark:bg-slate-950/20'
+              }`}>
                 {jdLoading ? (
                   <div className="py-4 space-y-2.5 text-slate-400">
                     <FaSpinner className="animate-spin text-2xl mx-auto text-purple-500" />
@@ -442,12 +507,14 @@ function JDAnalyzer({
                   </div>
                 ) : (
                   <label className="cursor-pointer group flex flex-col items-center gap-3">
-                    <FaUpload className="text-3xl text-slate-400 group-hover:text-purple-400 transition" />
+                    <FaUpload className={`text-3xl transition ${jdDragActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-purple-400'}`} />
                     <div>
                       <p className="text-sm font-bold text-slate-650 dark:text-slate-300">
-                        Click to upload JD {jdTab.toUpperCase()}
+                        {jdDragActive ? "Drop the file now!" : `Click to upload JD ${jdTab.toUpperCase()}`}
                       </p>
-                      <p className="text-[10px] text-slate-400 mt-1">Supports only .{jdTab} files</p>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {jdDragActive ? "Release mouse button to upload." : `Supports only .${jdTab} files`}
+                      </p>
                     </div>
                     <input
                       type="file"
