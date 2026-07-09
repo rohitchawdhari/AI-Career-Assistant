@@ -28,6 +28,41 @@ function Login({ setPage, setToken, setUser }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
+  useEffect(() => {
+    const initializeGoogle = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: "724339906660-6j7jtrb29c92209q93e155o2014o4081.apps.googleusercontent.com",
+          callback: handleGoogleCallback,
+          ux_mode: "popup"
+        });
+
+        window.google.accounts.id.renderButton(
+          document.getElementById("google-signin-btn"),
+          { 
+            theme: "outline", 
+            size: "large", 
+            width: "382",
+            text: "continue_with",
+            shape: "rectangular"
+          }
+        );
+      }
+    };
+
+    if (!document.getElementById("google-gsi-script")) {
+      const script = document.createElement("script");
+      script.id = "google-gsi-script";
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogle;
+      document.body.appendChild(script);
+    } else {
+      initializeGoogle();
+    }
+  }, [view]);
+
   const validateForm = () => {
     const newErrors = {};
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -99,40 +134,57 @@ function Login({ setPage, setToken, setUser }) {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    const gEmail = prompt("Enter Google account email to sign in:", "");
-    if (!gEmail) return;
-    const gName = prompt("Enter display name:", "");
-    if (!gName) return;
-
+  const handleGoogleCallback = async (response) => {
     try {
       setLoading(true);
       const res = await API.post("/google-login", {
-        email: gEmail.trim().toLowerCase(),
-        name: gName.trim(),
-        google_id: "google_oauth_" + Math.random().toString(36).substring(2, 10),
-        picture: "https://lh3.googleusercontent.com/a/default-user=s96-c",
+        credential: response.credential
       });
 
-      setToken(res.data.access_token);
-
-      setUser({
-        name: res.data.name,
-        email: res.data.email,
-        createdAt: res.data.created_at,
-        lastLogin: res.data.last_login,
-        loginHistory: res.data.login_history || [],
-        expiresAt: res.data.expires_at,
-        role: res.data.role || "user",
-        profile_picture: res.data.profile_picture
-      });
-
-      toast.success(`Google Login Successful! Welcome ${res.data.name} 🎉`);
-
-      setTimeout(() => {
-        setPage("dashboard");
-      }, 800);
-
+      if (res.data.status === "link_required") {
+        const confirmLink = window.confirm(
+          "This email is already registered using Email & Password. Would you like to link your Google account?"
+        );
+        if (confirmLink) {
+          const linkRes = await API.post("/google-link", {
+            credential: response.credential,
+            confirm_link: true
+          });
+          setToken(linkRes.data.access_token);
+          setUser({
+            name: linkRes.data.name,
+            email: linkRes.data.email,
+            createdAt: linkRes.data.created_at,
+            lastLogin: linkRes.data.last_login,
+            loginHistory: linkRes.data.login_history || [],
+            expiresAt: linkRes.data.expires_at,
+            role: linkRes.data.role || "user",
+            profile_picture: linkRes.data.profile_picture
+          });
+          toast.success("Account successfully linked and logged in! 🤝");
+          setTimeout(() => {
+            setPage("dashboard");
+          }, 800);
+        } else {
+          toast.info("Account linking canceled.");
+        }
+      } else {
+        setToken(res.data.access_token);
+        setUser({
+          name: res.data.name,
+          email: res.data.email,
+          createdAt: res.data.created_at,
+          lastLogin: res.data.last_login,
+          loginHistory: res.data.login_history || [],
+          expiresAt: res.data.expires_at,
+          role: res.data.role || "user",
+          profile_picture: res.data.profile_picture
+        });
+        toast.success(`Welcome back, ${res.data.name}! 🎉`);
+        setTimeout(() => {
+          setPage("dashboard");
+        }, 800);
+      }
     } catch (err) {
       const errorMsg = err.response?.data?.detail || "Google Login failed.";
       toast.error(errorMsg);
@@ -353,31 +405,9 @@ function Login({ setPage, setToken, setUser }) {
               <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 py-3.5 border border-slate-300 rounded-xl font-bold transition cursor-pointer shadow-sm text-sm"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#EA4335"
-                  d="M12 5.04c1.86 0 3.42.61 4.74 1.8l3.52-3.52C18.12 1.44 15.31 0 12 0 7.31 0 3.32 2.7 1.4 6.64l4.08 3.16C6.46 7.14 9.01 5.04 12 5.04z"
-                />
-                <path
-                  fill="#4285F4"
-                  d="M23.52 12.28c0-.77-.07-1.52-.2-2.28H12v4.51h6.47c-.28 1.48-1.12 2.74-2.38 3.58l3.7 2.87c2.16-2 3.73-4.94 3.73-8.68z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.48 14.68C5.2 13.88 5.04 13 5.04 12s.16-1.88.44-2.68L1.4 6.16C.51 7.92 0 9.9 0 12s.51 4.08 1.4 5.84l4.08-3.16z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.1-4.26 1.1-3.66 0-6.76-2.48-7.86-5.8l-4.08 3.16C3.32 21.3 7.31 24 12 24z"
-                />
-              </svg>
-              Continue with Google
-            </button>
+            <div className="flex justify-center w-full mt-2">
+              <div id="google-signin-btn" className="w-full flex justify-center"></div>
+            </div>
 
             <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
               New user?{" "}

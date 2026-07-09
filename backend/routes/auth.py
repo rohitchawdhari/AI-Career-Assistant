@@ -4,6 +4,7 @@ from typing import Optional
 from passlib.context import CryptContext
 from jose import jwt
 import datetime
+import requests
 import time
 import random
 from db import db
@@ -362,54 +363,76 @@ def delete_account(background_tasks: BackgroundTasks, authorization: str = Heade
 
 
 class GoogleLoginRequest(BaseModel):
-    email: str
-    name: Optional[str] = ""
-    google_id: Optional[str] = ""
-    picture: Optional[str] = ""
+    credential: str
+
+class GoogleSignupRequest(BaseModel):
+    credential: str
+
+class GoogleLinkRequest(BaseModel):
+    credential: str
+    confirm_link: bool
+
+def verify_google_credential(credential: str):
+    verify_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+    response = requests.get(verify_url)
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Google credentials or token has expired."
+        )
+    
+    idinfo = response.json()
+    email = idinfo.get("email", "").strip().lower()
+    name = idinfo.get("name", "").strip()
+    google_id = idinfo.get("sub", "")
+    picture = idinfo.get("picture", "")
+    
+    if not email:
+        raise HTTPException(
+            status_code=400,
+            detail="Google ID token does not contain a valid email address."
+        )
+        
+    return {
+        "email": email,
+        "name": name,
+        "google_id": google_id,
+        "picture": picture
+    }
 
 
 @router.post("/google-login")
 def google_login(data: GoogleLoginRequest, background_tasks: BackgroundTasks):
-    email = data.email.strip().lower()
+    g_data = verify_google_credential(data.credential)
+    email = g_data["email"]
+    
     existing_user = users.find_one({"email": email})
     
-    if existing_user:
-        if existing_user.get("is_blocked"):
-            raise HTTPException(
-                status_code=403,
-                detail="Your account has been temporarily blocked by the Administrator."
-            )
-        users.update_one(
-            {"email": email},
-            {"$set": {
-                "google_id": data.google_id,
-                "profile_picture": data.picture
-            }}
+    if not existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="No account found with this Google account. Please Sign Up first."
         )
-        user_name = existing_user["name"]
-        created_at = existing_user.get("created_at") or datetime.datetime.utcnow().isoformat()
-    else:
-        user_name = data.name.strip() if data.name else email.split("@")[0]
-        hashed_password = pwd_context.hash(str(random.randint(10000000, 99999999)))
-        created_at = datetime.datetime.utcnow().isoformat()
         
-        users.insert_one({
-            "name": user_name,
+    if existing_user.get("is_blocked"):
+        raise HTTPException(
+            status_code=403,
+            detail="Your account has been temporarily blocked by the Administrator."
+        )
+        
+    # Account linking trigger: If email exists but google_id is not linked
+    if not existing_user.get("google_id"):
+        return {
+            "status": "link_required",
             "email": email,
-            "password": hashed_password,
-            "google_id": data.google_id,
-            "profile_picture": data.picture,
-            "role": "user",
-            "created_at": created_at
-        })
+            "name": g_data["name"],
+            "google_id": g_data["google_id"],
+            "picture": g_data["picture"]
+        }
         
-        registration_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
-        try:
-            background_tasks.add_task(send_welcome_email, email, user_name, registration_time)
-            background_tasks.add_task(send_admin_registration_alert, user_name, email, registration_time)
-        except Exception as e:
-            print(f"FAILED TO QUEUE GOOGLE SIGNUP EMAILS: {e}")
-
+    user_name = existing_user["name"]
+    created_at = existing_user.get("created_at") or datetime.datetime.utcnow().isoformat()
+    
     expire_delta = datetime.timedelta(hours=1)
     expires_at = datetime.datetime.now(datetime.timezone.utc) + expire_delta
     
@@ -427,12 +450,21 @@ def google_login(data: GoogleLoginRequest, background_tasks: BackgroundTasks):
         "email": email,
         "timestamp": int(time.time()),
         "ip_address": "127.0.0.1",
-        "user_agent": "Google OAuth Auth Flow"
+        "user_agent": "Google OAuth Login"
     }
     login_history.insert_one(login_entry)
     
     last_login_record = list(login_history.find({"email": email}).sort("timestamp", -1).skip(1).limit(1))
     last_login_time = last_login_record[0]["timestamp"] if last_login_record else int(time.time())
+
+    prior_history = list(login_history.find({"email": email}).sort("timestamp", -1).limit(5))
+    history_list = []
+    for item in prior_history:
+        history_list.append({
+            "timestamp": item["timestamp"],
+            "ip_address": item["ip_address"],
+            "user_agent": item["user_agent"]
+        })
 
     login_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     try:
@@ -449,6 +481,166 @@ def google_login(data: GoogleLoginRequest, background_tasks: BackgroundTasks):
         "expires_at": int(expires_at.timestamp()),
         "created_at": created_at,
         "last_login": last_login_time,
-        "role": existing_user.get("role", "user") if existing_user else "user",
-        "profile_picture": data.picture
+        "login_history": history_list,
+        "role": existing_user.get("role", "user"),
+        "profile_picture": existing_user.get("profile_picture", g_data["picture"])
+    }
+
+
+@router.post("/google-signup")
+def google_signup(data: GoogleSignupRequest, background_tasks: BackgroundTasks):
+    g_data = verify_google_credential(data.credential)
+    email = g_data["email"]
+    
+    existing_user = users.find_one({"email": email})
+    
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="This account already exists. Please Sign In using Google."
+        )
+        
+    user_name = g_data["name"] if g_data["name"] else email.split("@")[0]
+    created_at = datetime.datetime.utcnow().isoformat()
+    
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    created_date = now_utc.strftime("%Y-%m-%d")
+    created_time = now_utc.strftime("%H:%M:%S")
+    
+    new_user = {
+        "name": user_name,
+        "email": email,
+        "password": None,
+        "google_id": g_data["google_id"],
+        "profile_picture": g_data["picture"],
+        "provider": "Google",
+        "email_verified": True,
+        "role": "user",
+        "created_at": created_at,
+        "created_date": created_date,
+        "created_time": created_time
+    }
+    
+    users.insert_one(new_user)
+    
+    registration_time = now_utc.strftime("%Y-%m-%d %H:%M:%S UTC")
+    try:
+        background_tasks.add_task(send_welcome_email, email, user_name, registration_time)
+        background_tasks.add_task(send_admin_registration_alert, user_name, email, registration_time)
+    except Exception as e:
+        print(f"FAILED TO QUEUE GOOGLE SIGNUP EMAILS: {e}")
+        
+    expire_delta = datetime.timedelta(hours=1)
+    expires_at = now_utc + expire_delta
+    
+    token = jwt.encode(
+        {
+            "email": email,
+            "name": user_name,
+            "exp": expires_at
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+    login_entry = {
+        "email": email,
+        "timestamp": int(time.time()),
+        "ip_address": "127.0.0.1",
+        "user_agent": "Google OAuth Signup"
+    }
+    login_history.insert_one(login_entry)
+    
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "name": user_name,
+        "email": email,
+        "expires_at": int(expires_at.timestamp()),
+        "created_at": created_at,
+        "last_login": int(time.time()),
+        "login_history": [{
+            "timestamp": login_entry["timestamp"],
+            "ip_address": login_entry["ip_address"],
+            "user_agent": login_entry["user_agent"]
+        }],
+        "role": "user",
+        "profile_picture": g_data["picture"]
+    }
+
+
+@router.post("/google-link")
+def google_link(data: GoogleLinkRequest, background_tasks: BackgroundTasks):
+    g_data = verify_google_credential(data.credential)
+    email = g_data["email"]
+    
+    existing_user = users.find_one({"email": email})
+    if not existing_user:
+        raise HTTPException(
+            status_code=404,
+            detail="User account not found."
+        )
+        
+    if not data.confirm_link:
+        raise HTTPException(
+            status_code=400,
+            detail="Account linking rejected."
+        )
+        
+    users.update_one(
+        {"email": email},
+        {"$set": {
+            "google_id": g_data["google_id"],
+            "profile_picture": g_data["picture"],
+            "provider": "Email + Google"
+        }}
+    )
+    
+    user_name = existing_user["name"]
+    created_at = existing_user.get("created_at") or datetime.datetime.utcnow().isoformat()
+    
+    expire_delta = datetime.timedelta(hours=1)
+    expires_at = datetime.datetime.now(datetime.timezone.utc) + expire_delta
+    
+    token = jwt.encode(
+        {
+            "email": email,
+            "name": user_name,
+            "exp": expires_at
+        },
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+    login_entry = {
+        "email": email,
+        "timestamp": int(time.time()),
+        "ip_address": "127.0.0.1",
+        "user_agent": "Google Link Account Login"
+    }
+    login_history.insert_one(login_entry)
+    
+    last_login_record = list(login_history.find({"email": email}).sort("timestamp", -1).skip(1).limit(1))
+    last_login_time = last_login_record[0]["timestamp"] if last_login_record else int(time.time())
+
+    prior_history = list(login_history.find({"email": email}).sort("timestamp", -1).limit(5))
+    history_list = []
+    for item in prior_history:
+        history_list.append({
+            "timestamp": item["timestamp"],
+            "ip_address": item["ip_address"],
+            "user_agent": item["user_agent"]
+        })
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "name": user_name,
+        "email": email,
+        "expires_at": int(expires_at.timestamp()),
+        "created_at": created_at,
+        "last_login": last_login_time,
+        "login_history": history_list,
+        "role": existing_user.get("role", "user"),
+        "profile_picture": g_data["picture"]
     }
