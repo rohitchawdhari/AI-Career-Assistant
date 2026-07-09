@@ -100,7 +100,7 @@ function Signup({ setPage, setToken, setUser }) {
     const initializeGoogle = () => {
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: "724339906660-6j7jtrb29c92209q93e155o2014o4081.apps.googleusercontent.com",
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "724339906660-6j7jtrb29c92209q93e155o2014o4081.apps.googleusercontent.com",
           callback: handleGoogleCallback,
           ux_mode: "popup"
         });
