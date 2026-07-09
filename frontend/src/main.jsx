@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
+// Vercel build trigger for dynamic VITE_GOOGLE_CLIENT_ID environment variable
 import App from "./App";
 import "./index.css";
 
