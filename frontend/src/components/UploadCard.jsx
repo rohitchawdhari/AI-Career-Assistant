@@ -19,6 +19,7 @@ function UploadCard({
     useState(false);
 
   const [dragActive, setDragActive] = useState(false);
+  const [fileName, setFileName] = useState("");
 
   const handleDrag = (e) => {
     e.preventDefault();
