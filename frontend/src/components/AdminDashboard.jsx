@@ -68,6 +68,17 @@ function AdminDashboard() {
     }
   };
 
+  const handleRoleChange = async (email, currentRole) => {
+    const newRole = currentRole === "recruiter" ? "user" : "recruiter";
+    try {
+      const res = await API.post("/admin/users/role", { email, role: newRole });
+      toast.success(res.data.message);
+      fetchUsers(search);
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Action failed");
+    }
+  };
+
   const handleDeleteUser = async (email) => {
     if (!window.confirm(`Are you sure you want to completely wipe user ${email}?`)) return;
     try {
@@ -208,6 +219,15 @@ function AdminDashboard() {
                       >
                         {user.is_blocked ? <FaCheck size={10} /> : <FaBan size={10} />}
                       </button>
+                      {user.email !== "rohitchawdhari48@gmail.com" && (
+                        <button
+                          onClick={() => handleRoleChange(user.email, user.role)}
+                          className="px-2 py-1 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition text-[9px] font-black uppercase tracking-wider"
+                          title="Toggle Recruiter Role"
+                        >
+                          {user.role === "recruiter" ? "User" : "Recruiter"}
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDeleteUser(user.email)}
                         className="p-1.5 border border-red-300 text-red-500 rounded-lg hover:bg-red-50 transition"

@@ -28,40 +28,7 @@ function Login({ setPage, setToken, setUser }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
 
-  useEffect(() => {
-    const initializeGoogle = () => {
-      if (window.google) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "724339906660-6j7jtrb29c92209q93e155o2014o4081.apps.googleusercontent.com",
-          callback: handleGoogleCallback,
-          ux_mode: "popup"
-        });
 
-        window.google.accounts.id.renderButton(
-          document.getElementById("google-signin-btn"),
-          { 
-            theme: "outline", 
-            size: "large", 
-            width: "382",
-            text: "continue_with",
-            shape: "rectangular"
-          }
-        );
-      }
-    };
-
-    if (!document.getElementById("google-gsi-script")) {
-      const script = document.createElement("script");
-      script.id = "google-gsi-script";
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = initializeGoogle;
-      document.body.appendChild(script);
-    } else {
-      initializeGoogle();
-    }
-  }, [view]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -134,64 +101,7 @@ function Login({ setPage, setToken, setUser }) {
     }
   };
 
-  const handleGoogleCallback = async (response) => {
-    try {
-      setLoading(true);
-      const res = await API.post("/google-login", {
-        credential: response.credential
-      });
 
-      if (res.data.status === "link_required") {
-        const confirmLink = window.confirm(
-          "This email is already registered using Email & Password. Would you like to link your Google account?"
-        );
-        if (confirmLink) {
-          const linkRes = await API.post("/google-link", {
-            credential: response.credential,
-            confirm_link: true
-          });
-          setToken(linkRes.data.access_token);
-          setUser({
-            name: linkRes.data.name,
-            email: linkRes.data.email,
-            createdAt: linkRes.data.created_at,
-            lastLogin: linkRes.data.last_login,
-            loginHistory: linkRes.data.login_history || [],
-            expiresAt: linkRes.data.expires_at,
-            role: linkRes.data.role || "user",
-            profile_picture: linkRes.data.profile_picture
-          });
-          toast.success("Account successfully linked and logged in! 🤝");
-          setTimeout(() => {
-            setPage("dashboard");
-          }, 800);
-        } else {
-          toast.info("Account linking canceled.");
-        }
-      } else {
-        setToken(res.data.access_token);
-        setUser({
-          name: res.data.name,
-          email: res.data.email,
-          createdAt: res.data.created_at,
-          lastLogin: res.data.last_login,
-          loginHistory: res.data.login_history || [],
-          expiresAt: res.data.expires_at,
-          role: res.data.role || "user",
-          profile_picture: res.data.profile_picture
-        });
-        toast.success(`Welcome back, ${res.data.name}! 🎉`);
-        setTimeout(() => {
-          setPage("dashboard");
-        }, 800);
-      }
-    } catch (err) {
-      const errorMsg = err.response?.data?.detail || "Google Login failed.";
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
@@ -313,7 +223,7 @@ function Login({ setPage, setToken, setUser }) {
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-5">
+            <form onSubmit={handleLogin} className="space-y-5" autoComplete="off">
               <div>
                 <label className="block text-slate-600 dark:text-slate-300 font-semibold text-xs uppercase tracking-wider mb-2">
                   Email Address
@@ -327,6 +237,7 @@ function Login({ setPage, setToken, setUser }) {
                     placeholder="you@example.com"
                     value={email}
                     disabled={loading}
+                    autoComplete="off"
                     onChange={(e) => {
                       setEmail(e.target.value);
                       if (errors.email) setErrors((prev) => ({ ...prev, email: "" }));
@@ -366,6 +277,7 @@ function Login({ setPage, setToken, setUser }) {
                     placeholder="••••••••"
                     value={password}
                     disabled={loading}
+                    autoComplete="new-password"
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (errors.password) setErrors((prev) => ({ ...prev, password: "" }));
@@ -399,15 +311,7 @@ function Login({ setPage, setToken, setUser }) {
               </button>
             </form>
 
-            <div className="relative flex py-3 items-center">
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-              <span className="flex-shrink mx-4 text-slate-400 text-xs uppercase tracking-wider font-bold">Or</span>
-              <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
-            </div>
 
-            <div className="flex justify-center w-full mt-2">
-              <div id="google-signin-btn" className="w-full flex justify-center"></div>
-            </div>
 
             <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center text-sm text-slate-500 dark:text-slate-400">
               New user?{" "}

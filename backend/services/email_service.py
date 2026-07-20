@@ -329,3 +329,59 @@ AI Career Assistant Team
         subtype="plain"
     )
     await _send_message_safe(message)
+
+
+async def send_candidate_shortlisted_email(
+    email: str,
+    candidate_name: str,
+    job_title: str
+):
+    message = MessageSchema(
+        subject=f"Congratulations! Application Shortlisted for {job_title} 🎉",
+        recipients=[email],
+        body=f"""
+Hello {candidate_name},
+
+Great news! We are pleased to inform you that your application for the position of "{job_title}" has been Shortlisted by our recruitment team after an initial resume screening.
+
+Next Steps:
+- Our recruitment coordinator will follow up with interview schedule details.
+- You can check your candidate portal dashboard anytime for interview notifications and updates.
+
+Thank you for your interest in joining our team!
+
+Best regards,
+Talent Acquisition Team
+AI Career Assistant Recruitment Platform
+""",
+        subtype="plain"
+    )
+    await _send_message_safe(message)
+
+
+async def send_candidate_rejected_email(
+    email: str,
+    candidate_name: str,
+    job_title: str
+):
+    message = MessageSchema(
+        subject=f"Application Update: {job_title}",
+        recipients=[email],
+        body=f"""
+Hello {candidate_name},
+
+Thank you for taking the time to apply for the position of "{job_title}".
+
+After careful review of your resume and qualifications, we regret to inform you that we will not be moving forward with your application for this specific role at this time.
+
+We appreciate your effort and invite you to stay connected and apply for future openings that match your skills.
+
+We wish you all the best in your career journey.
+
+Sincerely,
+Talent Acquisition Team
+AI Career Assistant Recruitment Platform
+""",
+        subtype="plain"
+    )
+    await _send_message_safe(message)

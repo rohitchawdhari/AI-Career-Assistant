@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FaHome, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave, FaBriefcase, FaSearch, FaGraduationCap, FaCertificate, FaFolderOpen, FaPenNib, FaCheckCircle } from "react-icons/fa";
+import { FaHome, FaUsers, FaChartBar, FaBullseye, FaMagic, FaComments, FaWrench, FaHistory, FaUserCircle, FaSignOutAlt, FaTrophy, FaTools, FaFileAlt, FaFileSignature, FaQuestionCircle, FaGithub, FaLinkedin, FaGlobe, FaMoneyBillWave, FaBriefcase, FaSearch, FaGraduationCap, FaCertificate, FaFolderOpen, FaPenNib, FaCheckCircle, FaCalendarAlt } from "react-icons/fa";
 import { toast } from "react-toastify";
 import Overview from "../components/Overview";
 import ATSCard from "../components/ATSCard";
@@ -27,6 +27,7 @@ import CertificateManager from "../components/CertificateManager";
 import PortfolioGenerator from "../components/PortfolioGenerator";
 import CreativeStudio from "../components/CreativeStudio";
 import CareerScorecard from "../components/CareerScorecard";
+import RecruiterDashboard from "../components/RecruiterDashboard";
 import API from "../services/api";
 
 function Dashboard({ user, onLogout }) {
@@ -47,6 +48,22 @@ function Dashboard({ user, onLogout }) {
   // Advanced AI ATS States
   const [aiAtsLoading, setAiAtsLoading] = useState(false);
   const [aiAtsData, setAiAtsData] = useState(null);
+
+  // Candidate Interview Invitations State
+  const [myInterviews, setMyInterviews] = useState([]);
+
+  useEffect(() => {
+    fetchMyInterviews();
+  }, []);
+
+  const fetchMyInterviews = async () => {
+    try {
+      const res = await API.get("/candidate/my-interviews");
+      setMyInterviews(res.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // JD Match States
   const [matchScore, setMatchScore] = useState(0);
@@ -227,6 +244,10 @@ function Dashboard({ user, onLogout }) {
     { id: "profile", label: "Profile Settings", icon: <FaUserCircle /> },
   ];
 
+  if (user?.role === "admin" || user?.email === "rohitchawdhari48@gmail.com" || user?.role === "recruiter") {
+    menuItems.push({ id: "recruiter", label: "Recruiter Dashboard", icon: <FaUsers /> });
+  }
+
   if (user?.role === "admin" || user?.email === "rohitchawdhari48@gmail.com") {
     menuItems.push({ id: "admin", label: "Admin Panel", icon: <FaTools /> });
   }
@@ -308,6 +329,41 @@ function Dashboard({ user, onLogout }) {
         {/* Overview Tab Exclusive Widgets */}
         {activeTab === "overview" && (
           <div className="space-y-6">
+            
+            {/* Candidate Scheduled Interview Invitations */}
+            {myInterviews.length > 0 && (
+              <div className="p-6 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-3xl backdrop-blur-xl shadow-xl space-y-4 animate-in fade-in duration-300">
+                <h3 className="text-base font-black text-white flex items-center gap-2">
+                  <FaCalendarAlt className="text-purple-400" /> Scheduled Interview Invitations 🎉
+                </h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {myInterviews.map((iv) => (
+                    <div key={iv.id} className="p-4 bg-white/10 dark:bg-slate-900/60 rounded-2xl border border-white/10 space-y-2 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-purple-300 text-sm">{iv.job_title}</span>
+                        <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold uppercase text-[9px]">{iv.mode}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-slate-200 font-semibold">
+                        <span>📅 Date: {iv.date}</span>
+                        <span>⏰ Time: {iv.time}</span>
+                      </div>
+                      <div className="text-slate-200">
+                        <strong>{iv.mode === "Online" ? "Link: " : "Venue: "}</strong>
+                        {iv.mode === "Online" ? (
+                          <a href={iv.link_or_venue} target="_blank" rel="noreferrer" className="text-cyan-300 underline font-semibold">
+                            {iv.link_or_venue}
+                          </a>
+                        ) : (
+                          <span className="font-semibold">{iv.link_or_venue}</span>
+                        )}
+                      </div>
+                      {iv.notes && <p className="text-slate-300 italic mt-1 bg-black/20 p-2 rounded-lg">"{iv.notes}"</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Statistics Cards Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               
@@ -625,6 +681,10 @@ function Dashboard({ user, onLogout }) {
 
         {activeTab === "admin" && (
           <AdminDashboard />
+        )}
+
+        {activeTab === "recruiter" && (
+          <RecruiterDashboard />
         )}
 
         {activeTab === "jobsearch" && (

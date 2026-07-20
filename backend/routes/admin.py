@@ -29,6 +29,10 @@ class AnnouncementRequest(BaseModel):
     subject: str
     body: str
 
+class RoleRequest(BaseModel):
+    email: str
+    role: str
+
 # Helper to verify admin role
 def verify_admin(authorization: str):
     if not authorization or not authorization.startswith("Bearer "):
@@ -240,3 +244,19 @@ def get_system_status(authorization: str = Header(None)):
         "gemini_status": gemini_status,
         "server_status": "Online"
     }
+
+# 8. User Role Modification
+@router.post("/users/role")
+def modify_user_role(data: RoleRequest, authorization: str = Header(None)):
+    verify_admin(authorization)
+    
+    target_email = data.email.strip().lower()
+    if target_email == "rohitchawdhari48@gmail.com":
+        raise HTTPException(status_code=400, detail="Cannot change role of the root admin account")
+        
+    role = data.role.strip().lower()
+    if role not in ["user", "recruiter", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role specified")
+        
+    users.update_one({"email": target_email}, {"$set": {"role": role}})
+    return {"message": f"User {target_email} role has been successfully updated to {role}"}

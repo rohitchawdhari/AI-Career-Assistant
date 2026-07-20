@@ -11,6 +11,8 @@ from routes.tools import router as tools_router
 from routes.admin import router as admin_router
 from routes.analytics import router as analytics_router
 from routes.enterprise import router as enterprise_router
+from routes.recruiter import router as recruiter_router
+from routes.candidate import router as candidate_router
 
 import os
 
@@ -78,6 +80,14 @@ app.include_router(
 
 app.include_router(
     enterprise_router
+)
+
+app.include_router(
+    recruiter_router
+)
+
+app.include_router(
+    candidate_router
 )
 
 

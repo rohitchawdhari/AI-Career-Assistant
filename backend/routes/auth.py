@@ -85,10 +85,17 @@ def signup(user: UserSignup, background_tasks: BackgroundTasks):
 
     registration_time = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
+    role = "user"
+    if "recruiter" in email or email.endswith("@recruiter.com"):
+        role = "recruiter"
+    elif email == "rohitchawdhari48@gmail.com":
+        role = "admin"
+
     result = users.insert_one({
         "name": user.name.strip(),
         "email": email,
         "password": hashed_password,
+        "role": role,
         "created_at": datetime.datetime.utcnow().isoformat()
     })
 
